@@ -2,7 +2,7 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 import { NewOrUpdateNote, Note } from '../types/note'
 
 type Api = {
-  saveNote: (note: NewOrUpdateNote) => number
+  saveNote: (note: NewOrUpdateNote) => Note
   listNotes: () => Promise<Note[]>
   getNote: (id: number) => Promise<Note | null>
 }

@@ -31,7 +31,7 @@ db.prepare(
 ).run()
 
 // 插入/更新笔记
-ipcMain.handle('save-note', (event, { id, title, content }): number => {
+ipcMain.handle('save-note', (event, { id, title, content }): Note => {
   const now = Date.now()
   if (id) {
     db.prepare(`UPDATE notes SET title=?, content=?, updatedAt=? WHERE id=?`).run(
@@ -40,12 +40,12 @@ ipcMain.handle('save-note', (event, { id, title, content }): number => {
       now,
       id
     )
-    return id
+    return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id)
   } else {
     const result = db
       .prepare(`INSERT INTO notes (title, content, updatedAt) VALUES (?, ?, ?)`)
       .run(title, content, now)
-    return result.lastInsertRowid
+    return db.prepare(`SELECT * FROM notes WHERE id=?`).get(result.lastInsertRowid)
   }
 })
 
@@ -56,22 +56,23 @@ ipcMain.handle('get-note', (event, id): Note => {
 
 // 获取所有笔记（仅 id 和标题）
 ipcMain.handle('list-notes', (): Note[] => {
-  return db.prepare(`SELECT id, title, updatedAt FROM notes ORDER BY updatedAt DESC`).all()
+  return db.prepare(`SELECT id, title, updatedAt FROM notes`).all() // ORDER BY updatedAt DESC
 })
 
 function createWindow(): void {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 350,
+    width: 360,
     height: 570,
-    minWidth: 300,
+    center: true, // 居中显示
+    minWidth: 360,
     minHeight: 100,
     show: false,
     alwaysOnTop: true,
+    transparent: true,
     skipTaskbar: true, // 👈 关键参数，隐藏任务栏图标
     autoHideMenuBar: true, // ❌ 隐藏菜单栏
     maximizable: false, // ✅ 禁用最大化(不会触发 maximize 事件)
-    // resizable: false,         // ❌ 禁止拖拽调整大小
     frame: false, // ❌ 去掉系统标题栏和按钮
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -96,11 +97,29 @@ function createWindow(): void {
   // 鼠标检测展开/收起
   setInterval(() => {
     updateWindowPosition()
-  }, 300)
+  }, 100)
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
+  })
+
+  let lastBounds = mainWindow.getBounds()
+
+  mainWindow.on('will-resize', (event, newBounds) => {
+    const oldBounds = lastBounds
+
+    // 如果左边或上边发生变化 → 拦截
+    const deltaX = newBounds.x - oldBounds.x
+    const deltaY = newBounds.y - oldBounds.y
+
+    if (deltaX !== 0 || deltaY !== 0) {
+      event.preventDefault()
+      return
+    }
+
+    // ✅ 只允许右边和下边缩放，更新 lastBounds
+    lastBounds = newBounds
   })
 
   // HMR for renderer base on electron-vite cli.
@@ -153,7 +172,7 @@ function hideWindowSmooth(): void {
   animateWindowY(
     mainWindow,
     -(bounds.height - 15),
-    300,
+    200,
     (state: boolean) => {
       isAnimating = state
     },
@@ -168,7 +187,7 @@ function showWindowSmooth(): void {
   animateWindowY(
     mainWindow,
     0,
-    300,
+    200,
     (state: boolean) => {
       isAnimating = state
     },
@@ -193,7 +212,7 @@ app.whenReady().then(() => {
   })
 
   // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  ipcMain.on('ping', (event: Electron.IpcMainEvent, title: string) => console.log('pong', title))
 
   ipcMain.on('window-minimize', () => {
     mainWindow?.minimize()

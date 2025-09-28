@@ -1,14 +1,15 @@
 import React from 'react'
 
-const TitleBar: React.FC = () => {
+interface TitleBarProps {
+  onAddNote: () => void // 父组件回调
+}
+
+const TitleBar: React.FC<TitleBarProps> = ({ onAddNote }) => {
   return (
     <div className="titlebar">
-      {/* <button
-        className="titlebar-btn"
-        onClick={() => window.electron.ipcRenderer.send('window-minimize')}
-      >
-        —
-      </button> */}
+      <button className="titlebar-btn" onClick={onAddNote}>
+        +
+      </button>
     </div>
   )
 }
