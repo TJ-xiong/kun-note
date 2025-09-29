@@ -5,6 +5,7 @@ type Api = {
   saveNote: (note: NewOrUpdateNote) => Note
   listNotes: () => Promise<Note[]>
   getNote: (id: number) => Promise<Note | null>
+  deleteNote: (id: number) => Promise<number>
 }
 
 declare global {

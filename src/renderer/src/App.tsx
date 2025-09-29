@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import TitleBar from './components/TitleBar'
 import { Note, NewOrUpdateNote } from '../../types/note'
+import GlobalContextMenu from './components/GlobalContextMenu'
+import { useContextMenu } from '@renderer/hooks/useContextMenu'
 
 function App(): React.JSX.Element {
   const ipcHandle = (noteTitle: string): void => window.electron.ipcRenderer.send('ping', noteTitle)
@@ -16,9 +18,15 @@ function App(): React.JSX.Element {
       const notesData = await window.api.listNotes()
       console.log('所有笔记:', notesData)
       setNotes(notesData) // 更新状态，界面自动刷新
+      handleChangeNote(notesData[0].id) // 默认选中第一个笔记
     } catch (error) {
       console.error('加载笔记失败:', error)
     }
+  }
+
+  const handleDeleteNote = async (id: number): Promise<void> => {
+    await window.api.deleteNote(id)
+    loadList()
   }
 
   const handleAddNote = async (): Promise<void> => {
@@ -86,6 +94,28 @@ function App(): React.JSX.Element {
     loadList()
   }
 
+  // 顶层声明 hook
+  const { bind } = useContextMenu()
+
+  const handleContextMenu = useCallback(
+    (note: Note) => (e: React.MouseEvent) => {
+      e.preventDefault()
+      bind.onContextMenu(e, [
+        { label: '重命名', onClick: () => handleDoubleClick(note) },
+        { divider: true, label: '', onClick: () => {} },
+        {
+          label: '删除',
+          onClick: () => {
+            if (window.confirm(`确定要删除【${note.title}】吗？`)) {
+              handleDeleteNote(note.id)
+            }
+          }
+        }
+      ])
+    },
+    [bind]
+  )
+
   // 相当于 Vue 的 onMounted
   useEffect(() => {
     loadList()
@@ -94,65 +124,69 @@ function App(): React.JSX.Element {
   return (
     <>
       <div className="container">
+        <GlobalContextMenu /> {/* 全局只挂一次 */}
         <div className="slider">
-          {notes.map((note: Note) => (
-            <button
-              key={note.id}
-              onClick={() => handleChangeNote(note.id)}
-              onDoubleClick={() => handleDoubleClick(note)}
-              style={{
-                display: 'block',
-                width: '80%',
-                minHeight: '30px',
-                border: 'none',
-                borderRadius: '6px 0px 0px 6px',
-                background: currentNote?.id === note.id ? '#d0e6ff' : '#f0f0f0',
-                cursor: 'pointer',
-                fontWeight: currentNote?.id === note.id ? 'bold' : 'normal',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-            >
-              {editingNoteId === note.id ? (
-                <input
-                  type="text"
-                  value={editingTitle}
-                  autoFocus
-                  onChange={handleTitleChange}
-                  onBlur={() => handleTitleBlur(note)}
-                  onKeyDown={(e) => handleTitleKeyDown(e, note)}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    border: 'none',
-                    outline: 'none',
-                    background: 'transparent',
-                    fontWeight: 'bold'
-                  }}
-                />
-              ) : (
-                <>
-                  <span
+          {notes.map((note: Note) => {
+            return (
+              <button
+                key={note.id}
+                onContextMenu={handleContextMenu(note)}
+                onClick={() => handleChangeNote(note.id)}
+                onDoubleClick={() => handleDoubleClick(note)}
+                style={{
+                  display: 'block',
+                  width: '80%',
+                  minHeight: '30px',
+                  border: 'none',
+                  borderRadius: '6px 0px 0px 6px',
+                  background: currentNote?.id === note.id ? '#d0e6ff' : '#f0f0f0',
+                  cursor: 'pointer',
+                  fontWeight: currentNote?.id === note.id ? 'bold' : 'normal',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {editingNoteId === note.id ? (
+                  <input
+                    type="text"
+                    value={editingTitle}
+                    autoFocus
+                    onChange={handleTitleChange}
+                    onBlur={() => handleTitleBlur(note)}
+                    onKeyDown={(e) => handleTitleKeyDown(e, note)}
                     style={{
-                      display: 'block',
-                      transition: 'all 0.3s ease',
-                      transform:
-                        currentNote?.id === note.id ? 'translateX(0)' : 'translateX(-10px)',
-                      opacity: currentNote?.id === note.id ? 1 : 0,
+                      width: '100%',
                       height: '100%',
-                      width: '4px',
-                      backgroundColor: '#3399ff',
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      borderRadius: '2px'
+                      border: 'none',
+                      outline: 'none',
+                      background: 'transparent',
+                      fontWeight: 'bold'
                     }}
                   />
-                  {note.title}
-                </>
-              )}
-            </button>
-          ))}
+                ) : (
+                  <>
+                    <span
+                      style={{
+                        display: 'block',
+                        transition: 'all 0.3s ease',
+                        transform:
+                          currentNote?.id === note.id ? 'translateX(0)' : 'translateX(-10px)',
+                        opacity: currentNote?.id === note.id ? 1 : 0,
+                        height: '100%',
+                        width: '4px',
+                        backgroundColor: '#3399ff',
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        borderRadius: '2px'
+                      }}
+                    />
+                    {note.title}
+                  </>
+                )}
+              </button>
+            )
+          })}
         </div>
         <div className="main">
           <TitleBar onAddNote={handleAddNote} />

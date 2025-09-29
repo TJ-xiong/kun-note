@@ -59,6 +59,11 @@ ipcMain.handle('list-notes', (): Note[] => {
   return db.prepare(`SELECT id, title, updatedAt FROM notes`).all() // ORDER BY updatedAt DESC
 })
 
+// 删除笔记
+ipcMain.handle('delete-note', (event, id): number => {
+  return db.prepare(`DELETE FROM notes WHERE id=?`).run(id)
+})
+
 function createWindow(): void {
   // Create the browser window.
   mainWindow = new BrowserWindow({

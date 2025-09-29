@@ -6,7 +6,8 @@ import { Note } from '../types/note'
 const api = {
   saveNote: (note: Note) => ipcRenderer.invoke('save-note', note),
   getNote: (id: number) => ipcRenderer.invoke('get-note', id),
-  listNotes: () => ipcRenderer.invoke('list-notes')
+  listNotes: () => ipcRenderer.invoke('list-notes'),
+  deleteNote: (id: number) => ipcRenderer.invoke('delete-note', id)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
