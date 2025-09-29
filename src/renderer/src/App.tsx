@@ -5,7 +5,7 @@ import GlobalContextMenu from './components/GlobalContextMenu'
 import { useContextMenu } from '@renderer/hooks/useContextMenu'
 
 function App(): React.JSX.Element {
-  const ipcHandle = (noteTitle: string): void => window.electron.ipcRenderer.send('ping', noteTitle)
+  // const ipcHandle = (noteTitle: string): void => window.electron.ipcRenderer.send('ping', noteTitle)
   const [notes, setNotes] = useState<Note[]>([]) // 用 state 保存笔记
   const [currentNote, setCurrentNote] = useState<Note | null>(null) // 当前选中的笔记
   const saveTimer = useRef<NodeJS.Timeout | null>(null) // 保存防抖定时器
@@ -107,7 +107,7 @@ function App(): React.JSX.Element {
           label: '删除',
           onClick: () => {
             if (window.confirm(`确定要删除【${note.title}】吗？`)) {
-              handleDeleteNote(note.id)
+              note.id && handleDeleteNote(note.id)
             }
           }
         }

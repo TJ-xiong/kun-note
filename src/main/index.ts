@@ -33,6 +33,7 @@ db.prepare(
 
 // 插入/更新笔记
 ipcMain.handle('save-note', (event, { id, title, content }): Note => {
+  console.log(event)
   const now = Date.now()
   if (id) {
     db.prepare(`UPDATE notes SET title=?, content=?, updatedAt=? WHERE id=?`).run(
@@ -52,6 +53,7 @@ ipcMain.handle('save-note', (event, { id, title, content }): Note => {
 
 // 获取单个笔记
 ipcMain.handle('get-note', (event, id): Note => {
+  console.log(event)
   return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id)
 })
 
@@ -62,6 +64,7 @@ ipcMain.handle('list-notes', (): Note[] => {
 
 // 删除笔记
 ipcMain.handle('delete-note', (event, id): number => {
+  console.log(event)
   return db.prepare(`DELETE FROM notes WHERE id=?`).run(id)
 })
 
@@ -135,7 +138,7 @@ function createWindow(): void {
 }
 
 function updateWindowPosition(): void {
-  if (!mainWindow) return
+  if (!mainWindow || mainWindow.isDestroyed()) return // ✅ 窗口已销毁
   if (isAnimating) return // ✅ 动画中不触发
   const cursor = screen.getCursorScreenPoint()
   const bounds = mainWindow.getBounds()
@@ -150,7 +153,7 @@ function updateWindowPosition(): void {
     // 鼠标离开 → 启动延迟隐藏
     if (!hideTimer) {
       hideTimer = setTimeout(() => {
-        if (!mainWindow) return
+        if (!mainWindow || mainWindow.isDestroyed()) return // ✅ 窗口已销毁
         // 再次确认鼠标是否还在外面
         const cur = screen.getCursorScreenPoint()
         const b = mainWindow.getBounds()
@@ -215,7 +218,10 @@ app.whenReady().then(() => {
   })
 
   // IPC test
-  ipcMain.on('ping', (event: Electron.IpcMainEvent, title: string) => console.log('pong', title))
+  ipcMain.on('ping', (event: Electron.IpcMainEvent, title: string) => {
+    console.log(event)
+    console.log('pong', title)
+  })
 
   // ipcMain.on('window-minimize', () => {
   //   mainWindow?.minimize()
@@ -282,3 +288,10 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+app.on('before-quit', () => {
+  if (hideTimer) {
+    clearTimeout(hideTimer)
+    hideTimer = null
+  }
+})
