@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, screen } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, screen, Tray, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -12,6 +12,7 @@ let isAnimating = false // 动画标志
 let isHidden = false // 窗口状态标志
 let hideTimer: NodeJS.Timeout | null = null // 隐藏定时器
 let mainWindow: BrowserWindow | null = null
+let tray: Tray | null = null // 系统托盘图标
 // 数据库路径（放在用户数据目录）
 const dbPath = path.join(app.getPath('userData'), 'notes.db')
 console.log(dbPath)
@@ -204,7 +205,7 @@ function showWindowSmooth(): void {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  electronApp.setAppUserModelId('com.electron.kun-notes')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -216,21 +217,58 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', (event: Electron.IpcMainEvent, title: string) => console.log('pong', title))
 
-  ipcMain.on('window-minimize', () => {
-    mainWindow?.minimize()
-  })
+  // ipcMain.on('window-minimize', () => {
+  //   mainWindow?.minimize()
+  // })
 
-  ipcMain.on('window-close', () => {
-    mainWindow?.close()
-  })
+  // ipcMain.on('window-close', () => {
+  //   mainWindow?.close()
+  // })
 
   createWindow()
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  // 创建托盘图标
+  const iconPath = path.join(icon) // 建议用 16x16 或 32x32 PNG
+  tray = new Tray(iconPath) // 设置托盘图标的菜单
+  // 托盘菜单
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示窗口',
+      click: () => {
+        mainWindow && mainWindow.show()
+      }
+    },
+    {
+      label: '隐藏窗口',
+      click: () => {
+        mainWindow && mainWindow.hide()
+      }
+    },
+    {
+      label: '退出',
+      click: () => {
+        app.quit()
+      }
+    }
+  ])
+
+  tray.setToolTip('kun-notes')
+  tray.setContextMenu(contextMenu)
+
+  // 左键单击托盘图标：显示/隐藏窗口
+  tray.on('click', () => {
+    if (mainWindow && mainWindow.isVisible()) {
+      mainWindow.hide()
+    } else {
+      mainWindow && mainWindow.show()
+    }
   })
+
+  // app.on('activate', function () {
+  // On macOS it's common to re-create a window in the app when the
+  // dock icon is clicked and there are no other windows open.
+  // if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  // })
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
