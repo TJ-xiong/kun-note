@@ -3,6 +3,7 @@
 .container {
   display: flex;
   height: 100vh;
+  overflow: hidden;
 }
 
 .slider {
@@ -16,7 +17,7 @@
   gap: 10px;
   border-right: '1px solid #ccc';
   padding: '8px';
-  overflow-y: 'auto';
+  overflow-y: 'hidden';
   scrollbar-width: thin;
   scrollbar-color: '#bbb transparent';
 }

@@ -80,12 +80,16 @@ function createWindow(): void {
       sandbox: false
     }
   })
+  let lastBounds = mainWindow.getBounds() // 记录上一次窗口位置
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
   })
 
   mainWindow.on('moved', () => {
+    if (mainWindow) {
+      lastBounds = mainWindow.getBounds()
+    }
     if (isAnimating || isHidden) return // ✅ 避免重复触发
     const bounds = mainWindow?.getBounds()
     // 拖到顶部并松开才触发
@@ -104,22 +108,15 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  let lastBounds = mainWindow.getBounds()
-
   mainWindow.on('will-resize', (event, newBounds) => {
-    const oldBounds = lastBounds
-
-    // 如果左边或上边发生变化 → 拦截
-    const deltaX = newBounds.x - oldBounds.x
-    const deltaY = newBounds.y - oldBounds.y
-
-    if (deltaX !== 0 || deltaY !== 0) {
+    if (newBounds.x !== lastBounds.x || newBounds.y !== lastBounds.y) {
       event.preventDefault()
-      return
     }
+  })
 
-    // ✅ 只允许右边和下边缩放，更新 lastBounds
-    lastBounds = newBounds
+  mainWindow.on('resize', () => {
+    if (!mainWindow) return
+    lastBounds = mainWindow.getBounds()
   })
 
   // HMR for renderer base on electron-vite cli.

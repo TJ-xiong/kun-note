@@ -103,7 +103,7 @@ function App(): React.JSX.Element {
               style={{
                 display: 'block',
                 width: '80%',
-                height: '30px',
+                minHeight: '30px',
                 border: 'none',
                 borderRadius: '6px 0px 0px 6px',
                 background: currentNote?.id === note.id ? '#d0e6ff' : '#f0f0f0',
