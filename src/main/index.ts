@@ -71,6 +71,7 @@ ipcMain.handle('delete-note', (event, id): number => {
 function createWindow(): void {
   // Create the browser window.
   mainWindow = new BrowserWindow({
+    icon,
     width: 360,
     height: 570,
     center: true, // 居中显示

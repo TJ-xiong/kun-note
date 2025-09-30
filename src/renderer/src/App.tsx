@@ -41,6 +41,8 @@ function App(): React.JSX.Element {
   const handleChangeNote = async (id: number | null): Promise<void> => {
     if (!id) return
     const note = await window.api.getNote(id)
+    console.log(note)
+
     setCurrentNote(note)
   }
 
@@ -194,7 +196,7 @@ function App(): React.JSX.Element {
             {currentNote ? (
               <textarea
                 className="main-content-textarea"
-                value={currentNote.content}
+                value={currentNote.content || ''}
                 onChange={handleContentChange}
                 placeholder="请输入笔记内容"
               />
