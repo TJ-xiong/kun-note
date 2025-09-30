@@ -41,8 +41,6 @@ function App(): React.JSX.Element {
   const handleChangeNote = async (id: number | null): Promise<void> => {
     if (!id) return
     const note = await window.api.getNote(id)
-    console.log(note)
-
     setCurrentNote(note)
   }
 
@@ -73,7 +71,7 @@ function App(): React.JSX.Element {
   }
 
   const handleTitleBlur = (note: Note): void => {
-    handleUpdateNoteTitle(note, note.title)
+    handleUpdateNoteTitle(note, editingTitle)
     setEditingNoteId(null)
   }
 
@@ -93,7 +91,12 @@ function App(): React.JSX.Element {
       title: title,
       content: note.content
     })
-    loadList()
+    notes.forEach((item) => {
+      if (item.id === note.id) {
+        item.title = title
+      }
+    })
+    setNotes([...notes])
   }
 
   // 顶层声明 hook
