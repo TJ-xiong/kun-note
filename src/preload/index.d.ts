@@ -6,6 +6,7 @@ type Api = {
   listNotes: () => Promise<Note[]>
   getNote: (id: number) => Promise<Note | null>
   deleteNote: (id: number) => Promise<number>
+  handleTransparent: (isTransparent: boolean) => void
 }
 
 declare global {

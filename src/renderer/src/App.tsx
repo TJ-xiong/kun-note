@@ -4,6 +4,11 @@ import { Note, NewOrUpdateNote } from '../../types/note'
 import GlobalContextMenu from './components/GlobalContextMenu'
 import { useContextMenu } from '@renderer/hooks/useContextMenu'
 
+window.addEventListener('mousemove', (_event: MouseEvent) => {
+  const isTransparent = _event.toElement.className.includes('pointer-event-none')
+  window.api.handleTransparent(isTransparent)
+})
+
 function App(): React.JSX.Element {
   // const ipcHandle = (noteTitle: string): void => window.electron.ipcRenderer.send('ping', noteTitle)
   const [notes, setNotes] = useState<Note[]>([]) // 用 state 保存笔记
@@ -130,7 +135,7 @@ function App(): React.JSX.Element {
     <>
       <div className="container">
         <GlobalContextMenu /> {/* 全局只挂一次 */}
-        <div className="slider">
+        <div className="slider pointer-event-none">
           {notes.map((note: Note) => {
             return (
               <button

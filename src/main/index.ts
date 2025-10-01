@@ -32,8 +32,7 @@ db.prepare(
 ).run()
 
 // 插入/更新笔记
-ipcMain.handle('save-note', (event, { id, title, content }): Note => {
-  console.log(event)
+ipcMain.handle('save-note', (_event, { id, title, content }): Note => {
   const now = Date.now()
   if (id) {
     db.prepare(`UPDATE notes SET title=?, content=?, updatedAt=? WHERE id=?`).run(
@@ -52,8 +51,7 @@ ipcMain.handle('save-note', (event, { id, title, content }): Note => {
 })
 
 // 获取单个笔记
-ipcMain.handle('get-note', (event, id): Note => {
-  console.log(event)
+ipcMain.handle('get-note', (_event, id): Note => {
   return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id)
 })
 
@@ -63,9 +61,17 @@ ipcMain.handle('list-notes', (): Note[] => {
 })
 
 // 删除笔记
-ipcMain.handle('delete-note', (event, id): number => {
-  console.log(event)
+ipcMain.handle('delete-note', (_event, id): number => {
   return db.prepare(`DELETE FROM notes WHERE id=?`).run(id)
+})
+
+// 处理透明区域点击穿透
+ipcMain.handle('handle-transparent', (_event, isTransparent: boolean): void => {
+  if (isTransparent) {
+    mainWindow?.setIgnoreMouseEvents(true, { forward: true })
+  } else {
+    mainWindow?.setIgnoreMouseEvents(false)
+  }
 })
 
 function createWindow(): void {
@@ -219,8 +225,7 @@ app.whenReady().then(() => {
   })
 
   // IPC test
-  ipcMain.on('ping', (event: Electron.IpcMainEvent, title: string) => {
-    console.log(event)
+  ipcMain.on('ping', (_event: Electron.IpcMainEvent, title: string) => {
     console.log('pong', title)
   })
 

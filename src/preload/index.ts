@@ -7,7 +7,9 @@ const api = {
   saveNote: (note: Note) => ipcRenderer.invoke('save-note', note),
   getNote: (id: number) => ipcRenderer.invoke('get-note', id),
   listNotes: () => ipcRenderer.invoke('list-notes'),
-  deleteNote: (id: number) => ipcRenderer.invoke('delete-note', id)
+  deleteNote: (id: number) => ipcRenderer.invoke('delete-note', id),
+  handleTransparent: (isTransparent: boolean) =>
+    ipcRenderer.invoke('handle-transparent', isTransparent)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
