@@ -3,9 +3,11 @@ import TitleBar from './components/TitleBar'
 import { Note, NewOrUpdateNote } from '../../types/note'
 import GlobalContextMenu from './components/GlobalContextMenu'
 import { useContextMenu } from '@renderer/hooks/useContextMenu'
+import MarkdownEditor from './components/MarkdownEditor'
 
-window.addEventListener('mousemove', (_event: MouseEvent) => {
-  const isTransparent = _event.toElement.className.includes('pointer-event-none')
+window.addEventListener('mousemove', (event: MouseEvent) => {
+  const target = event.target as HTMLElement | null
+  const isTransparent = target?.classList.contains('pointer-event-none') ?? false
   window.api.handleTransparent(isTransparent)
 })
 
@@ -50,9 +52,9 @@ function App(): React.JSX.Element {
   }
 
   // 编辑笔记内容
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
+  const handleContentChange = (newValue: string): void => {
     if (!currentNote) return
-    const updatedNote = { ...currentNote, content: e.target.value }
+    const updatedNote = { ...currentNote, content: newValue }
     setCurrentNote(updatedNote)
     // 防抖保存到数据库
     if (saveTimer.current) clearTimeout(saveTimer.current)
@@ -202,13 +204,14 @@ function App(): React.JSX.Element {
           <TitleBar onAddNote={handleAddNote} />
           <div className="main-content">
             {currentNote ? (
-              <textarea
-                className="main-content-textarea"
-                value={currentNote.content || ''}
-                onChange={handleContentChange}
-                placeholder="请输入笔记内容"
-              />
+              <MarkdownEditor value={currentNote.content || ''} onChange={handleContentChange} />
             ) : (
+              // <textarea
+              //   className="main-content-textarea"
+              //   value={currentNote.content || ''}
+              //   onChange={handleContentChange}
+              //   placeholder="请输入笔记内容"
+              // />
               <p>请选择一个笔记</p>
             )}
           </div>

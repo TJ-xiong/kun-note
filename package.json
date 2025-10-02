@@ -26,7 +26,11 @@
     "@reduxjs/toolkit": "^2.9.0",
     "better-sqlite3": "^12.4.1",
     "electron-updater": "^6.3.9",
-    "react-redux": "^9.2.0"
+    "react-markdown": "^10.1.0",
+    "react-redux": "^9.2.0",
+    "react-syntax-highlighter": "^15.6.6",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
