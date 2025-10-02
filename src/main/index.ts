@@ -242,37 +242,53 @@ app.whenReady().then(() => {
   // 创建托盘图标
   const iconPath = path.join(icon) // 建议用 16x16 或 32x32 PNG
   tray = new Tray(iconPath) // 设置托盘图标的菜单
+  let lastBounds: Electron.Rectangle | null = null
+
+  function showWindow(): void {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    // 如果有缓存的窗口位置和大小，恢复
+    if (lastBounds) {
+      mainWindow.setBounds(lastBounds)
+    }
+    mainWindow.showInactive()
+    mainWindow.focus()
+  }
+
+  function hideWindow(): void {
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    // 缓存当前窗口位置和大小
+    lastBounds = mainWindow.getBounds()
+    // 移出屏幕模拟隐藏
+    mainWindow.setBounds({ x: 9999, y: 9999, width: 0, height: 0 })
+  }
+
   // 托盘菜单
   const contextMenu = Menu.buildFromTemplate([
     {
       label: '显示窗口',
-      click: () => {
-        mainWindow && mainWindow.show()
-      }
+      click: () => showWindow()
     },
     {
       label: '隐藏窗口',
-      click: () => {
-        mainWindow && mainWindow.hide()
-      }
+      click: () => hideWindow()
     },
     {
       label: '退出',
-      click: () => {
-        app.quit()
-      }
+      click: () => app.quit()
     }
   ])
 
   tray.setToolTip('kun-notes')
   tray.setContextMenu(contextMenu)
 
-  // 左键单击托盘图标：显示/隐藏窗口
+  // 左键点击托盘图标：切换显隐
   tray.on('click', () => {
-    if (mainWindow && mainWindow.isVisible()) {
-      mainWindow.hide()
+    if (!mainWindow || mainWindow.isDestroyed()) return
+    const isHidden = mainWindow.getBounds().x === 9999 && mainWindow.getBounds().y === 9999
+    if (isHidden) {
+      showWindow()
     } else {
-      mainWindow && mainWindow.show()
+      hideWindow()
     }
   })
 
