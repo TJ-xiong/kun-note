@@ -147,7 +147,7 @@ function App(): React.JSX.Element {
                 onDoubleClick={() => handleDoubleClick(note)}
                 style={{
                   display: 'block',
-                  width: '80%',
+                  width: currentNote?.id === note.id ? '100%' : '70%',
                   minHeight: '30px',
                   border: 'none',
                   borderRadius: '6px 0px 0px 6px',
@@ -155,7 +155,7 @@ function App(): React.JSX.Element {
                   cursor: 'pointer',
                   fontWeight: currentNote?.id === note.id ? 'bold' : 'normal',
                   position: 'relative',
-                  overflow: 'hidden'
+                  fontSize: '12px'
                 }}
               >
                 {editingNoteId === note.id ? (
