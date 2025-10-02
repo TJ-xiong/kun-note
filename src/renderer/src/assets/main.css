@@ -1,5 +1,9 @@
 @import './base.css';
 
+:root {
+  --titlebar-height: 30px; /* 标题栏高度 */
+}
+
 .container {
   display: flex;
   height: 100vh;
@@ -8,16 +12,16 @@
 
 .slider {
   width: 80px;
-  height: 100vh;
+  height: calc(100vh - 2 * var(--titlebar-height));
+  margin-top: var(--titlebar-height);
   background: transparent;
-  padding-top: 30px;
   display: flex;
   flex-direction: column;
   align-items: end;
   gap: 10px;
   border-right: '1px solid #ccc';
   padding: '8px';
-  overflow-y: 'hidden';
+  overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: '#bbb transparent';
 }
@@ -49,8 +53,8 @@
 }
 
 .titlebar {
-  -webkit-app-region: drag;  /* 整个区域可拖动 */
-  height: 30px;
+  -webkit-app-region: drag; /* 整个区域可拖动 */
+  height: var(--titlebar-height);
   width: 100%;
   background: #2f2f2f;
   display: flex;
@@ -73,4 +77,3 @@
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
 }
-
