@@ -132,6 +132,7 @@ function App(): React.JSX.Element {
             />
           ) : (
             <Slider
+              currParentId={currParentId}
               noteData={notes}
               currentNote={currentNote}
               handleChangeNote={(id: number) => handleChangeNote(id)}
