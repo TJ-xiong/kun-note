@@ -1,73 +1,56 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { RootState, hideMenu } from '@renderer/state'
+import { RootState } from '@renderer/state/menuStore'
+import { hideMenu } from '@renderer/state/menuSlice'
+import { triggerMenuCallback } from '@renderer/hooks/useContextMenu'
 
 const GlobalContextMenu: React.FC = () => {
   const dispatch = useDispatch()
   const { visible, position, items } = useSelector((state: RootState) => state.menu)
 
-  useEffect(() => {
-    const handleClick = () => dispatch(hideMenu())
-    document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
-  }, [dispatch])
-
   if (!visible) return null
 
   return (
-    <div
+    <ul
+      className="context-menu"
       style={{
-        position: 'absolute',
+        position: 'fixed',
         top: position.y,
         left: position.x,
         background: '#fff',
-        border: '1px solid #ccc',
-        borderRadius: '6px',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-        padding: '4px 0',
-        zIndex: 1000,
-        minWidth: '140px'
+        border: '1px solid #ddd',
+        borderRadius: 4,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+        listStyle: 'none',
+        padding: 4,
+        margin: 0,
+        zIndex: 9999
       }}
+      onContextMenu={(e) => e.preventDefault()}
     >
-      {items.map((item, index) =>
+      {items.map((item) =>
         item.divider ? (
-          <div
-            key={index}
-            style={{
-              height: '1px',
-              background: '#eee',
-              margin: '4px 0'
-            }}
-          />
+          <hr key={item.id} style={{ margin: '4px 0' }} />
         ) : (
-          <div
-            key={index}
-            onClick={() => {
-              if (!item.disabled) {
-                item.onClick()
-                dispatch(hideMenu())
-              }
-            }}
+          <li
+            key={item.id}
             style={{
               padding: '6px 12px',
               cursor: item.disabled ? 'not-allowed' : 'pointer',
-              color: item.disabled ? '#aaa' : '#333',
-              userSelect: 'none'
+              opacity: item.disabled ? 0.5 : 1
             }}
-            onMouseEnter={(e) => {
+            onClick={() => {
               if (!item.disabled) {
-                ;(e.target as HTMLDivElement).style.background = '#f5f5f5'
+                triggerMenuCallback(item.id)
+                dispatch(hideMenu())
               }
-            }}
-            onMouseLeave={(e) => {
-              ;(e.target as HTMLDivElement).style.background = 'transparent'
             }}
           >
             {item.label}
-          </div>
+          </li>
         )
       )}
-    </div>
+    </ul>
   )
 }
 
