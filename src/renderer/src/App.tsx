@@ -33,11 +33,6 @@ function App(): React.JSX.Element {
     }
   }
 
-  // const handleDeleteNote = async (id: number): Promise<void> => {
-  //   await window.api.deleteNote(id)
-  //   loadList()
-  // }
-
   const handleAddNote = async (type: NoteType, parentId: number): Promise<void> => {
     const newNote: NewOrUpdateNote = {
       id: null,
@@ -124,6 +119,7 @@ function App(): React.JSX.Element {
         <div className="slider">
           {sliderMenuShow ? (
             <SliderMenu
+              loadList={loadList}
               noteData={notes}
               currParentId={currParentId}
               setCurrParentId={(id: number) => setCurrParentId(id)}

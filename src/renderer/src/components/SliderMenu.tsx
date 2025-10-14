@@ -10,6 +10,7 @@ interface SliderMenuProps {
   handleChangeNote: (id: number) => void
   currParentId: number
   setCurrParentId: (id: number) => void
+  loadList: () => Promise<void>
 }
 
 function handleNoteData(noteData: Note[]): Note[] {
@@ -30,6 +31,7 @@ function handleNoteData(noteData: Note[]): Note[] {
 }
 
 const App: React.FC<SliderMenuProps> = ({
+  loadList,
   noteData,
   currentNote,
   handleChangeNote,
@@ -69,16 +71,29 @@ const App: React.FC<SliderMenuProps> = ({
     setCurrParentId(note.parentId)
   }
 
-  const handleDoubleClick = (note: Note): void => {
+  const handleDeleteNote = async (id: number): Promise<void> => {
+    await window.api.deleteNote(id)
+    loadList()
+  }
+  /**
+   * 右键修改标题
+   * @param note
+   */
+  const handleSettingTitle = (note: Note): void => {
     setEditingNote(note)
   }
-
+  /**
+   * 输入框内容变化
+   * @param e
+   */
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const _editingNote = JSON.parse(JSON.stringify(editingNote))
     _editingNote.title = e.target.value
     setEditingNote(_editingNote)
   }
-
+  /**
+   * 输入框失去焦点
+   */
   const handleTitleBlur = (): void => {
     if (editingNote) {
       handleUpdateNoteTitle(editingNote).then(() => {
@@ -86,7 +101,10 @@ const App: React.FC<SliderMenuProps> = ({
       })
     }
   }
-
+  /**
+   * 输入框回车
+   * @param e
+   */
   const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' && editingNote) {
       handleUpdateNoteTitle(editingNote).then(() => {
@@ -97,15 +115,14 @@ const App: React.FC<SliderMenuProps> = ({
       setEditingNote(null)
     }
   }
-
+  /**
+   * 操作数据库修改标题
+   * @param note
+   */
   const handleUpdateNoteTitle = async (note: Note): Promise<void> => {
-    window.api.saveNote(note)
-    showNotes.forEach((item: Note) => {
-      if (item.id === note.id) {
-        item.title = note.title
-      }
+    window.api.saveNote(note).then(() => {
+      loadList()
     })
-    setShowNotes([...showNotes])
   }
 
   // 顶层声明 hook
@@ -115,7 +132,7 @@ const App: React.FC<SliderMenuProps> = ({
     (note: Note) => (e: React.MouseEvent) => {
       e.preventDefault()
       bind.onContextMenu(e, [
-        { label: '重命名', onClick: () => handleDoubleClick(note) },
+        { label: '重命名', onClick: () => handleSettingTitle(note) },
         {
           divider: true,
           label: '',
@@ -125,7 +142,7 @@ const App: React.FC<SliderMenuProps> = ({
           label: '删除',
           onClick: () => {
             if (window.confirm(`确定要删除【${note.title}】吗？`)) {
-              note.id && console.log('handleDeleteNote(note.id)')
+              note.id && handleDeleteNote(note.id)
             }
           }
         }
@@ -137,7 +154,6 @@ const App: React.FC<SliderMenuProps> = ({
   // 相当于 Vue 的 onMounted
   useEffect(() => {
     const newNotes = handleNoteData(noteData)
-    // setNotes(newNotes)
     setShowNotes(newNotes.filter((item: Note) => item.parentId === currParentId))
   }, [noteData, currParentId])
 
