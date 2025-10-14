@@ -11,7 +11,7 @@
 }
 
 .slider {
-  width: 80px;
+  min-width: 160px;
   height: calc(100vh - 2 * var(--titlebar-height));
   margin-top: var(--titlebar-height);
   background: transparent;
@@ -76,4 +76,20 @@
 .titlebar-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
+}
+
+.slider-menu {
+  height: 100%;
+  width: 100%;
+  background: #f5f5f5;
+  border-radius: 6px 0 0 6px
+}
+
+.slider-container {
+  height: calc(100% - 48px);
+  width: 100%;
+  overflow: auto;
+  padding: 0 4px;
+  scrollbar-width: inherit;
+  scrollbar-color: #f5f5f5 transparent;
 }

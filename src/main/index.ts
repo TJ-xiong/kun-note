@@ -21,31 +21,32 @@ fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 // 初始化数据库
 const db = new Database(dbPath)
 
-// 建表：id, title, content, updatedAt
+// 建表：id, title, content, updatedAt, type, parent_id
 db.prepare(
   `CREATE TABLE IF NOT EXISTS notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT,
     content TEXT,
-    updatedAt INTEGER
+    updatedAt INTEGER,
+    type TEXT,
+    parentId INTEGER
   )`
 ).run()
 
 // 插入/更新笔记
-ipcMain.handle('save-note', (_event, { id, title, content }): Note => {
+ipcMain.handle('save-note', (_event, { id, title, content, type, parentId }): Note => {
   const now = Date.now()
   if (id) {
-    db.prepare(`UPDATE notes SET title=?, content=?, updatedAt=? WHERE id=?`).run(
-      title,
-      content,
-      now,
-      id
-    )
+    db.prepare(
+      `UPDATE notes SET title=?, content=?, updatedAt=?, type=?, parentId=? WHERE id=?`
+    ).run(title, content, now, type, parentId, id)
     return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id)
   } else {
     const result = db
-      .prepare(`INSERT INTO notes (title, content, updatedAt) VALUES (?, ?, ?)`)
-      .run(title, content, now)
+      .prepare(
+        `INSERT INTO notes (title, content, updatedAt, type, parentId) VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(title, content, now, type, parentId)
     return db.prepare(`SELECT * FROM notes WHERE id=?`).get(result.lastInsertRowid)
   }
 })
@@ -57,7 +58,7 @@ ipcMain.handle('get-note', (_event, id): Note => {
 
 // 获取所有笔记（仅 id 和标题）
 ipcMain.handle('list-notes', (): Note[] => {
-  return db.prepare(`SELECT id, title, updatedAt FROM notes`).all() // ORDER BY updatedAt DESC
+  return db.prepare(`SELECT id, title, updatedAt, type, parentId FROM notes`).all() // ORDER BY updatedAt DESC
 })
 
 // 删除笔记
@@ -78,7 +79,7 @@ function createWindow(): void {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     icon,
-    width: 360,
+    width: 460,
     height: 570,
     center: true, // 居中显示
     minWidth: 360,
