@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { GetProps, Input } from 'antd'
-import { Note } from 'src/types/note'
+import { Note, NoteType } from "src/types/note";
 import { FileMarkdownOutlined, FolderOpenOutlined, LeftOutlined } from '@ant-design/icons'
 import { useContextMenu } from '@renderer/hooks/useContextMenu'
 
@@ -11,6 +11,7 @@ interface SliderMenuProps {
   currParentId: number
   setCurrParentId: (id: number) => void
   loadList: () => Promise<void>
+  handleAddNote: (type: NoteType, parentId: number, title?: string) => Promise<void>
 }
 
 function handleNoteData(noteData: Note[]): Note[] {
@@ -36,7 +37,8 @@ const App: React.FC<SliderMenuProps> = ({
   currentNote,
   handleChangeNote,
   currParentId,
-  setCurrParentId
+  setCurrParentId,
+  handleAddNote
 }) => {
   // const [notes, setNotes] = useState<Note[]>([])
   const { Search } = Input
@@ -130,7 +132,7 @@ const App: React.FC<SliderMenuProps> = ({
 
   const handleContextMenu = useCallback(
     (note: Note) => (e: React.MouseEvent) => {
-      e.preventDefault()
+      e.stopPropagation() // ✅ 阻止父组件右键事件触发
       bind.onContextMenu(e, [
         { label: '重命名', onClick: () => handleSettingTitle(note) },
         {
@@ -151,6 +153,31 @@ const App: React.FC<SliderMenuProps> = ({
     [bind]
   )
 
+  const handleBlackMenu = useCallback(
+    (e: React.MouseEvent) => {
+      bind.onContextMenu(e, [
+        {
+          label: '新建文件夹',
+          onClick: () => {
+            handleAddNote('folder', currParentId, '文件夹')
+          }
+        },
+        {
+          divider: true,
+          label: '',
+          onClick: () => {}
+        },
+        {
+          label: '新建笔记',
+          onClick: () => {
+            handleAddNote('note', currParentId, '笔记')
+          }
+        }
+      ])
+    },
+    [bind]
+  )
+
   // 相当于 Vue 的 onMounted
   useEffect(() => {
     const newNotes = handleNoteData(noteData)
@@ -162,7 +189,12 @@ const App: React.FC<SliderMenuProps> = ({
       <div>
         <Search placeholder="关键字搜索" onSearch={onSearch} allowClear />
       </div>
-      <div className="slider-container">
+      <div
+        className="slider-container"
+        onContextMenu={(e) => {
+          handleBlackMenu(e)
+        }}
+      >
         {currParentId !== 0 && (
           <div>
             <LeftOutlined style={{ cursor: 'pointer' }} onClick={handleClickBack} />

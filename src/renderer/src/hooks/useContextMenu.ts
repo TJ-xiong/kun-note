@@ -31,7 +31,7 @@ export function useContextMenu() {
   function onContextMenu(
     e: React.MouseEvent,
     items: { label: string; onClick: () => void; divider?: boolean; disabled?: boolean }[]
-  ) {
+  ): void {
     e.preventDefault()
 
     // 注册回调函数
@@ -56,7 +56,7 @@ export function useContextMenu() {
 }
 
 // 供菜单组件触发回调使用
-export function triggerMenuCallback(id: string) {
+export function triggerMenuCallback(id: string): void {
   const cb = menuCallbacks[id]
   if (cb) cb()
 }

@@ -33,10 +33,10 @@ function App(): React.JSX.Element {
     }
   }
 
-  const handleAddNote = async (type: NoteType, parentId: number): Promise<void> => {
+  const handleAddNote = async (type: NoteType, parentId: number, title?: string): Promise<void> => {
     const newNote: NewOrUpdateNote = {
       id: null,
-      title: '新建笔记',
+      title: title ? title : '新建笔记',
       content: '',
       type,
       parentId
@@ -125,6 +125,7 @@ function App(): React.JSX.Element {
               setCurrParentId={(id: number) => setCurrParentId(id)}
               currentNote={currentNote}
               handleChangeNote={(id: number) => handleChangeNote(id)}
+              handleAddNote={handleAddNote}
             />
           ) : (
             <Slider
