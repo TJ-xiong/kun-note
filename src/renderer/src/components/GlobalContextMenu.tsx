@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState } from '@renderer/state/menuStore'
 import { hideMenu } from '@renderer/state/menuSlice'
@@ -7,11 +7,39 @@ import { triggerMenuCallback } from '@renderer/hooks/useContextMenu'
 const GlobalContextMenu: React.FC = () => {
   const dispatch = useDispatch()
   const { visible, position, items } = useSelector((state: RootState) => state.menu)
+  const menuRef = useRef<HTMLUListElement>(null)
+
+  // 点击外部关闭
+  useEffect(() => {
+    if (!visible) return
+
+    function handleClickOutside(e: MouseEvent): void {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        dispatch(hideMenu())
+      }
+    }
+
+    function handleEsc(e: KeyboardEvent): void {
+      if (e.key === 'Escape') {
+        dispatch(hideMenu())
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEsc)
+
+    // 清理
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEsc)
+    }
+  }, [visible, dispatch])
 
   if (!visible) return null
 
   return (
     <ul
+      ref={menuRef}
       className="context-menu"
       style={{
         position: 'fixed',
