@@ -17,17 +17,21 @@ function App(): React.JSX.Element {
   const [currentNote, setCurrentNote] = useState<Note | null>(null) // 当前选中的笔记
   const [currParentId, setCurrParentId] = useState<number>(0) // 当前选中的目录id
   const saveTimer = useRef<NodeJS.Timeout | null>(null) // 保存防抖定时器
-  // const [editingNoteId, setEditingNoteId] = useState<number | null>(null) // 正在编辑的笔记 id
-  // const [editingTitle, setEditingTitle] = useState('') // 编辑中的标题
   const [sliderMenuShow, setSliderMenuShow] = useState(false)
 
   // 异步加载笔记
   const loadList = async (): Promise<void> => {
     try {
-      const notesData = await window.api.listNotes()
+      let notesData = await window.api.listNotes()
+      notesData = notesData.sort((a, b) => b.title.localeCompare(a.title))
       console.log('所有笔记:', notesData)
       setNotes(notesData) // 更新状态，界面自动刷新
-      notesData[0].id && handleChangeNote(notesData[0].id) // 默认选中第一个笔记
+      for (let i = 0; i < notesData.length; i++) {
+        const note = notesData[i]
+        if (note.parentId === currParentId && note.type === 'note') {
+          note.id && handleChangeNote(note.id) // 默认选中第一个笔记
+        }
+      }
     } catch (error) {
       console.error('加载笔记失败:', error)
     }
@@ -71,42 +75,6 @@ function App(): React.JSX.Element {
       console.log('笔记已保存:', updatedNote)
     }, 500) // 500ms 防抖，可根据需求调整
   }
-
-  //
-  // const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-  //   setEditingTitle(e.target.value)
-  // }
-  //
-  // const handleTitleBlur = (note: Note): void => {
-  //   handleUpdateNoteTitle(note, editingTitle)
-  //   setEditingNoteId(null)
-  // }
-  //
-  // const handleTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, note: Note): void => {
-  //   if (e.key === 'Enter') {
-  //     handleUpdateNoteTitle(note, editingTitle)
-  //     setEditingNoteId(null)
-  //   }
-  //   if (e.key === 'Escape') {
-  //     setEditingNoteId(null)
-  //   }
-  // }
-
-  // const handleUpdateNoteTitle = async (note: Note, title: string): Promise<void> => {
-  //   window.api.saveNote({
-  //     id: note.id, // 新笔记传 null，更新时传已有 id
-  //     title: title,
-  //     content: note.content,
-  //     type: 'note',
-  //     parentId: 0
-  //   })
-  //   notes.forEach((item) => {
-  //     if (item.id === note.id) {
-  //       item.title = title
-  //     }
-  //   })
-  //   setNotes([...notes])
-  // }
 
   // 相当于 Vue 的 onMounted
   useEffect(() => {

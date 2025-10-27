@@ -157,9 +157,9 @@ const App: React.FC<SliderMenuProps> = ({
     (e: React.MouseEvent) => {
       bind.onContextMenu(e, [
         {
-          label: '新建文件夹',
+          label: '新建笔记',
           onClick: () => {
-            handleAddNote('folder', currParentId, '文件夹')
+            handleAddNote('note', currParentId, '笔记')
           }
         },
         {
@@ -168,9 +168,9 @@ const App: React.FC<SliderMenuProps> = ({
           onClick: () => {}
         },
         {
-          label: '新建笔记',
+          label: '新建文件夹',
           onClick: () => {
-            handleAddNote('note', currParentId, '笔记')
+            handleAddNote('folder', currParentId, '文件夹')
           }
         }
       ])
