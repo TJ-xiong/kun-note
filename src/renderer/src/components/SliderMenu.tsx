@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { GetProps, Input } from 'antd'
-import { Note, NoteType } from "src/types/note";
+import { Note, NoteType } from 'src/types/note'
 import { FileMarkdownOutlined, FolderOpenOutlined, LeftOutlined } from '@ant-design/icons'
 import { useContextMenu } from '@renderer/hooks/useContextMenu'
 
@@ -202,23 +202,26 @@ const App: React.FC<SliderMenuProps> = ({
           </div>
         )}
         {showNotes.map((item: Note) => {
+          // 菜单项
           return (
             <div
               key={item.id}
               onContextMenu={handleContextMenu(item)}
               onClick={() => handleClickItem(item)}
               style={{
-                width: '100%',
+                width: currentNote?.id === item.id ? '82%' : '80%',
+                margin: '0 auto',
+                borderRadius: '10px',
                 padding: '4px 0',
                 fontSize: '14px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'start',
-                borderBottom: '1px solid #e8e8e8',
                 background: '#fff',
                 cursor: 'pointer',
                 gap: '8px',
-                backgroundColor: currentNote?.id === item.id ? '#f0f0f0' : '#fff'
+                backgroundColor: currentNote?.id === item.id ? '#f0f0f0' : '#fff',
+                border: currentNote?.id === item.id ? '1px solid red' : 'none'
               }}
             >
               {item.type === 'folder' ? <FolderOpenOutlined /> : <FileMarkdownOutlined />}
