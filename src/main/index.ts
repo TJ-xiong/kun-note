@@ -7,6 +7,7 @@ import path from 'path'
 import fs from 'fs'
 import { animateWindowY, isCursorInsideWindow, isCursorNearTopOfWindow } from './utils/animation'
 import { Note } from '../types/note'
+import { v4 as uuidv4 } from 'uuid'
 
 let isAnimating = false // 动画标志
 let isHidden = false // 窗口状态标志
@@ -23,13 +24,14 @@ const db = new Database(dbPath)
 
 // 建表：id, title, content, updatedAt, type, parent_id
 db.prepare(
-  `CREATE TABLE IF NOT EXISTS notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ` CREATE TABLE IF NOT EXISTS notes (
+    id TEXT PRIMARY KEY,
     title TEXT,
     content TEXT,
-    updatedAt INTEGER,
     type TEXT,
-    parentId INTEGER
+    parentId TEXT,
+    createdAt INTEGER,
+    updatedAt INTEGER
   )`
 ).run()
 
@@ -40,30 +42,30 @@ ipcMain.handle('save-note', (_event, { id, title, content, type, parentId }): No
     db.prepare(
       `UPDATE notes SET title=?, content=?, updatedAt=?, type=?, parentId=? WHERE id=?`
     ).run(title, content, now, type, parentId, id)
-    return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id)
+    return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
   } else {
-    const result = db
-      .prepare(
-        `INSERT INTO notes (title, content, updatedAt, type, parentId) VALUES (?, ?, ?, ?, ?)`
-      )
-      .run(title, content, now, type, parentId)
-    return db.prepare(`SELECT * FROM notes WHERE id=?`).get(result.lastInsertRowid)
+    const id = uuidv4() // 生成唯一id
+    db.prepare(
+      `INSERT INTO notes (id, title, content, createdAt, updatedAt, type, parentId) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(id, title, content, now, now, type, parentId)
+    return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
   }
 })
 
 // 获取单个笔记
 ipcMain.handle('get-note', (_event, id): Note => {
-  return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id)
+  return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
 })
 
 // 获取所有笔记（仅 id 和标题）
 ipcMain.handle('list-notes', (): Note[] => {
-  return db.prepare(`SELECT id, title, updatedAt, type, parentId FROM notes`).all() // ORDER BY updatedAt DESC
+  return db.prepare(`SELECT id, title, updatedAt, type, parentId FROM notes`).all() as Note[] // ORDER BY updatedAt DESC
 })
 
 // 删除笔记
 ipcMain.handle('delete-note', (_event, id): number => {
-  return db.prepare(`DELETE FROM notes WHERE id=?`).run(id)
+  const result = db.prepare(`DELETE FROM notes WHERE id=?`).run(id)
+  return result.changes
 })
 
 // 处理透明区域点击穿透

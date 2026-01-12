@@ -5,9 +5,9 @@ import { Note } from '../types/note'
 // Custom APIs for renderer
 const api = {
   saveNote: (note: Note) => ipcRenderer.invoke('save-note', note),
-  getNote: (id: number) => ipcRenderer.invoke('get-note', id),
+  getNote: (id: string) => ipcRenderer.invoke('get-note', id),
   listNotes: () => ipcRenderer.invoke('list-notes'),
-  deleteNote: (id: number) => ipcRenderer.invoke('delete-note', id),
+  deleteNote: (id: string) => ipcRenderer.invoke('delete-note', id),
   handleTransparent: (isTransparent: boolean) =>
     ipcRenderer.invoke('handle-transparent', isTransparent)
 }

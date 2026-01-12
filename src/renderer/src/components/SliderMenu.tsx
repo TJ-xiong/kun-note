@@ -7,11 +7,11 @@ import { useContextMenu } from '@renderer/hooks/useContextMenu'
 interface SliderMenuProps {
   noteData: Note[]
   currentNote: Note | null
-  handleChangeNote: (id: number) => void
-  currParentId: number
-  setCurrParentId: (id: number) => void
+  handleChangeNote: (id: string) => void
+  currParentId: string
+  setCurrParentId: (id: string) => void
   loadList: () => Promise<void>
-  handleAddNote: (type: NoteType, parentId: number, title?: string) => Promise<void>
+  handleAddNote: (type: NoteType, parentId: string, title?: string) => Promise<void>
 }
 
 function handleNoteData(noteData: Note[]): Note[] {
@@ -73,7 +73,7 @@ const App: React.FC<SliderMenuProps> = ({
     setCurrParentId(note.parentId)
   }
 
-  const handleDeleteNote = async (id: number): Promise<void> => {
+  const handleDeleteNote = async (id: string): Promise<void> => {
     await window.api.deleteNote(id)
     loadList()
   }
@@ -195,7 +195,7 @@ const App: React.FC<SliderMenuProps> = ({
           handleBlackMenu(e)
         }}
       >
-        {currParentId !== 0 && (
+        {currParentId !== 'root' && (
           <div>
             <LeftOutlined style={{ cursor: 'pointer' }} onClick={handleClickBack} />
             <span>{getFolderName()}</span>

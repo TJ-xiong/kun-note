@@ -15,7 +15,7 @@ function App(): React.JSX.Element {
   // const ipcHandle = (noteTitle: string): void => window.electron.ipcRenderer.send('ping', noteTitle)
   const [notes, setNotes] = useState<Note[]>([]) // 用 state 保存笔记
   const [currentNote, setCurrentNote] = useState<Note | null>(null) // 当前选中的笔记
-  const [currParentId, setCurrParentId] = useState<number>(0) // 当前选中的目录id
+  const [currParentId, setCurrParentId] = useState<string>('root') // 当前选中的目录id
   const saveTimer = useRef<NodeJS.Timeout | null>(null) // 保存防抖定时器
   const [sliderMenuShow, setSliderMenuShow] = useState(false)
 
@@ -37,7 +37,7 @@ function App(): React.JSX.Element {
     }
   }
 
-  const handleAddNote = async (type: NoteType, parentId: number, title?: string): Promise<void> => {
+  const handleAddNote = async (type: NoteType, parentId: string, title?: string): Promise<void> => {
     const newNote: NewOrUpdateNote = {
       id: null,
       title: title ? title : '新建笔记',
@@ -52,7 +52,7 @@ function App(): React.JSX.Element {
   }
 
   // 切换笔记
-  const handleChangeNote = async (id: number): Promise<void> => {
+  const handleChangeNote = async (id: string): Promise<void> => {
     const note = await window.api.getNote(id)
     setCurrentNote(note)
   }
@@ -70,7 +70,7 @@ function App(): React.JSX.Element {
         title: updatedNote.title,
         content: updatedNote.content,
         type: 'note',
-        parentId: 0
+        parentId: 'root'
       })
       console.log('笔记已保存:', updatedNote)
     }, 500) // 500ms 防抖，可根据需求调整
@@ -90,9 +90,9 @@ function App(): React.JSX.Element {
               loadList={loadList}
               noteData={notes}
               currParentId={currParentId}
-              setCurrParentId={(id: number) => setCurrParentId(id)}
+              setCurrParentId={(id: string) => setCurrParentId(id)}
               currentNote={currentNote}
-              handleChangeNote={(id: number) => handleChangeNote(id)}
+              handleChangeNote={(id: string) => handleChangeNote(id)}
               handleAddNote={handleAddNote}
             />
           ) : (
@@ -100,7 +100,7 @@ function App(): React.JSX.Element {
               currParentId={currParentId}
               noteData={notes}
               currentNote={currentNote}
-              handleChangeNote={(id: number) => handleChangeNote(id)}
+              handleChangeNote={(id: string) => handleChangeNote(id)}
             />
           )}
         </div>

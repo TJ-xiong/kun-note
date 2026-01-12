@@ -4,8 +4,8 @@ import { NewOrUpdateNote, Note } from '../types/note'
 type Api = {
   saveNote: (note: NewOrUpdateNote) => Promise<Note>
   listNotes: () => Promise<Note[]>
-  getNote: (id: number) => Promise<Note | null>
-  deleteNote: (id: number) => Promise<number>
+  getNote: (id: string) => Promise<Note | null>
+  deleteNote: (id: string) => Promise<number>
   handleTransparent: (isTransparent: boolean) => void
 }
 
