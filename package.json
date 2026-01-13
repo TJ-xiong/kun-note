@@ -26,6 +26,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@reduxjs/toolkit": "^2.9.0",
     "antd": "^5.27.4",
+    "axios": "^1.13.2",
     "better-sqlite3": "^12.4.1",
     "electron-updater": "^6.3.9",
     "react-markdown": "^10.1.0",

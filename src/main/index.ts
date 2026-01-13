@@ -8,6 +8,7 @@ import fs from 'fs'
 import { animateWindowY, isCursorInsideWindow, isCursorNearTopOfWindow } from './utils/animation'
 import { Note } from '../types/note'
 import { v4 as uuidv4 } from 'uuid'
+import './ipc/request'
 
 let isAnimating = false // 动画标志
 let isHidden = false // 窗口状态标志

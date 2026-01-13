@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { Note } from '../types/note'
+import { HttpRequestConfig } from '../types/http'
 
 // Custom APIs for renderer
 const api = {
@@ -9,7 +10,9 @@ const api = {
   listNotes: () => ipcRenderer.invoke('list-notes'),
   deleteNote: (id: string) => ipcRenderer.invoke('delete-note', id),
   handleTransparent: (isTransparent: boolean) =>
-    ipcRenderer.invoke('handle-transparent', isTransparent)
+    ipcRenderer.invoke('handle-transparent', isTransparent),
+  request: <T = unknown>(config: HttpRequestConfig): Promise<T> =>
+    ipcRenderer.invoke('http-request', config)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

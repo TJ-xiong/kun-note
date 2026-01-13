@@ -4,6 +4,7 @@ import { NewOrUpdateNote, Note, NoteType } from '../../types/note'
 import MarkdownEditor from './components/MarkdownEditor'
 import SliderMenu from './components/SliderMenu'
 import Slider from './components/Slider'
+import { demo } from '@renderer/api'
 
 window.addEventListener('mousemove', (event: MouseEvent) => {
   const target = event.target as HTMLElement | null
@@ -78,6 +79,7 @@ function App(): React.JSX.Element {
 
   // 相当于 Vue 的 onMounted
   useEffect(() => {
+    demo()
     loadList()
   }, []) // 空依赖数组表示只在组件挂载时执行一次
 
