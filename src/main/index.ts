@@ -15,6 +15,7 @@ let isHidden = false // 窗口状态标志
 let hideTimer: NodeJS.Timeout | null = null // 隐藏定时器
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null // 系统托盘图标
+const windows = new Map<string, BrowserWindow>() // 跟踪所有打开的窗口
 // 数据库路径（放在用户数据目录）
 const dbPath = path.join(app.getPath('userData'), 'notes.db')
 console.log(dbPath)
@@ -78,9 +79,9 @@ ipcMain.handle('handle-transparent', (_event, isTransparent: boolean): void => {
   }
 })
 
-function createWindow(): void {
+function createWindow(page: string = 'main'): BrowserWindow {
   // Create the browser window.
-  mainWindow = new BrowserWindow({
+  const window = new BrowserWindow({
     icon,
     width: 460,
     height: 570,
@@ -97,21 +98,31 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      additionalArguments: [`--page=${page}`]
     }
   })
-  let lastBounds = mainWindow.getBounds() // 记录上一次窗口位置
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow?.show()
+  // Add window to the set
+  windows.set(page, window)
+
+  // Remove window from the set when closed
+  window.on('closed', () => {
+    windows.delete(page)
   })
 
-  mainWindow.on('moved', () => {
-    if (mainWindow) {
-      lastBounds = mainWindow.getBounds()
+  let lastBounds = window.getBounds() // 记录上一次窗口位置
+
+  window.on('ready-to-show', () => {
+    window?.show()
+  })
+
+  window.on('moved', () => {
+    if (window) {
+      lastBounds = window.getBounds()
     }
     if (isAnimating || isHidden) return // ✅ 避免重复触发
-    const bounds = mainWindow?.getBounds()
+    const bounds = window?.getBounds()
     // 拖到顶部并松开才触发
     if (bounds && bounds.y <= 0) {
       updateWindowPosition()
@@ -123,29 +134,31 @@ function createWindow(): void {
     updateWindowPosition()
   }, 100)
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  window.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
-  mainWindow.on('will-resize', (event, newBounds) => {
+  window.on('will-resize', (event, newBounds) => {
     if (newBounds.x !== lastBounds.x || newBounds.y !== lastBounds.y) {
       event.preventDefault()
     }
   })
 
-  mainWindow.on('resize', () => {
-    if (!mainWindow) return
-    lastBounds = mainWindow.getBounds()
+  window.on('resize', () => {
+    if (!window) return
+    lastBounds = window.getBounds()
   })
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    window.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    window.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  return window
 }
 
 function updateWindowPosition(): void {
@@ -233,6 +246,16 @@ app.whenReady().then(() => {
     console.log('pong', title)
   })
 
+  // IPC handler for creating new windows
+  ipcMain.handle('open-or-close-window', (_event, page: string) => {
+    const win = windows.get(page)
+    if (win) {
+      win.close()
+    } else {
+      createWindow(page)
+    }
+  })
+
   // ipcMain.on('window-minimize', () => {
   //   mainWindow?.minimize()
   // })
@@ -241,7 +264,7 @@ app.whenReady().then(() => {
   //   mainWindow?.close()
   // })
 
-  createWindow()
+  mainWindow = createWindow('main')
 
   // 创建托盘图标
   const iconPath = path.join(icon) // 建议用 16x16 或 32x32 PNG

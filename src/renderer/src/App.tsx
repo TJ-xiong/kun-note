@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import TitleBar from './components/TitleBar'
 import { NewOrUpdateNote, Note, NoteType } from '../../types/note'
 import MarkdownEditor from './components/MarkdownEditor'
 import SliderMenu from './components/SliderMenu'
 import Slider from './components/Slider'
 import { demo } from '@renderer/api'
+import { DateUtils } from '@renderer/utils/DateUtils'
 
 window.addEventListener('mousemove', (event: MouseEvent) => {
   const target = event.target as HTMLElement | null
@@ -41,7 +42,7 @@ function App(): React.JSX.Element {
   const handleAddNote = async (type: NoteType, parentId: string, title?: string): Promise<void> => {
     const newNote: NewOrUpdateNote = {
       id: null,
-      title: title ? title : '新建笔记',
+      title: title ? title : DateUtils.dateFormat(Date.now(), 'yy-MM-dd'),
       content: '',
       type,
       parentId
@@ -75,6 +76,11 @@ function App(): React.JSX.Element {
       })
       console.log('笔记已保存:', updatedNote)
     }, 500) // 500ms 防抖，可根据需求调整
+  }
+
+  // 打开设置窗口
+  const openSettingWin = (): void => {
+    window.api.openOrCloseWindow('settings')
   }
 
   // 相当于 Vue 的 onMounted
@@ -111,6 +117,7 @@ function App(): React.JSX.Element {
             onAddNote={() => handleAddNote('note', currParentId)}
             sliderMenuShow={sliderMenuShow}
             onSliderMenuShowChange={(value: boolean) => setSliderMenuShow(value)}
+            onSetting={() => openSettingWin()}
           />
           <div className="main-content">
             {currentNote ? (

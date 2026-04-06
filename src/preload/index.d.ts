@@ -8,6 +8,7 @@ type Api = {
   getNote: (id: string) => Promise<Note | null>
   deleteNote: (id: string) => Promise<number>
   handleTransparent: (isTransparent: boolean) => void
+  openOrCloseWindow: (route: string) => Promise<void>
   request<T = unknown>(config: HttpRequestConfig): Promise<T>
 }
 
@@ -15,5 +16,8 @@ declare global {
   interface Window {
     electron: ElectronAPI
     api: Api
+    process: {
+      argv: string[]
+    }
   }
 }

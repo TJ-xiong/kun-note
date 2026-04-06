@@ -11,6 +11,7 @@ const api = {
   deleteNote: (id: string) => ipcRenderer.invoke('delete-note', id),
   handleTransparent: (isTransparent: boolean) =>
     ipcRenderer.invoke('handle-transparent', isTransparent),
+  openOrCloseWindow: (route: string) => ipcRenderer.invoke('open-or-close-window', route),
   request: <T = unknown>(config: HttpRequestConfig): Promise<T> =>
     ipcRenderer.invoke('http-request', config)
 }
@@ -22,6 +23,9 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('process', {
+      argv: process.argv
+    })
   } catch (error) {
     console.error(error)
   }
@@ -30,4 +34,6 @@ if (process.contextIsolated) {
   window.electron = electronAPI
   // @ts-ignore (define in dts)
   window.api = api
+  // @ts-ignore (define in dts)
+  window.process = process
 }
