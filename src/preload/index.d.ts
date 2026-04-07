@@ -10,6 +10,9 @@ type Api = {
   handleTransparent: (isTransparent: boolean) => void
   openOrCloseWindow: (route: string) => Promise<void>
   request<T = unknown>(config: HttpRequestConfig): Promise<T>
+  saveImage: (dataUrl: string) => Promise<string> // 返回 ./images/xxx
+  getImagesDir: () => Promise<string>
+  getImageDataUrl: (rel: string) => Promise<string>
 }
 
 declare global {

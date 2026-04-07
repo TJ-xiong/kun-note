@@ -79,6 +79,46 @@ ipcMain.handle('handle-transparent', (_event, isTransparent: boolean): void => {
   }
 })
 
+// 保存图片到用户数据目录并返回相对路径（./images/xxx）
+ipcMain.handle('save-image', async (_event, dataUrl: string): Promise<string> => {
+  const m = dataUrl.match(/^data:(image\/(png|jpeg|jpg|gif|webp));base64,(.+)$/i)
+  if (!m) throw new Error('Unsupported data URL')
+  const ext = m[2] === 'jpg' ? 'jpeg' : m[2]
+  const base64 = m[3]
+  const buffer = Buffer.from(base64, 'base64')
+  const imagesDir = path.join(app.getPath('userData'), 'images')
+  fs.mkdirSync(imagesDir, { recursive: true })
+  const filename = `${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`
+  const filePath = path.join(imagesDir, filename)
+  fs.writeFileSync(filePath, buffer)
+  // 返回相对路径，便于同步/迁移
+  return `./images/${filename}`
+})
+
+// 获取图片目录的绝对路径
+ipcMain.handle('get-images-dir', () => {
+  const imagesDir = path.join(app.getPath('userData'), 'images')
+  fs.mkdirSync(imagesDir, { recursive: true })
+  return imagesDir
+})
+
+// 读取图片为 data URL（用于在 dev 环境避免 file:/// 受限）
+ipcMain.handle('get-image-data-url', (_event, rel: string): string => {
+  const name = String(rel || '')
+    .replace(/^\.\/images\//, '')
+    .replace(/^images\//, '')
+  if (!/^[\w.-]+$/.test(name)) {
+    throw new Error('Invalid image name')
+  }
+  const imagesDir = path.join(app.getPath('userData'), 'images')
+  const abs = path.join(imagesDir, name)
+  if (!fs.existsSync(abs)) throw new Error('Image not found')
+  const buf = fs.readFileSync(abs)
+  const ext = (path.extname(name).slice(1).toLowerCase() || 'png')
+  const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`
+  return `data:${mime};base64,${buf.toString('base64')}`
+})
+
 function createWindow(page: string = 'main'): BrowserWindow {
   // Create the browser window.
   const window = new BrowserWindow({

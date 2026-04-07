@@ -13,7 +13,13 @@ const api = {
     ipcRenderer.invoke('handle-transparent', isTransparent),
   openOrCloseWindow: (route: string) => ipcRenderer.invoke('open-or-close-window', route),
   request: <T = unknown>(config: HttpRequestConfig): Promise<T> =>
-    ipcRenderer.invoke('http-request', config)
+    ipcRenderer.invoke('http-request', config),
+  // 保存剪贴板图片到本地，返回相对路径（./images/xxx）
+  saveImage: (dataUrl: string): Promise<string> => ipcRenderer.invoke('save-image', dataUrl),
+  // 获取图片目录的绝对路径（用于渲染时解析相对路径）
+  getImagesDir: (): Promise<string> => ipcRenderer.invoke('get-images-dir'),
+  // 将相对图片路径转换为 data URL（用于 dev 环境避免 file:/// CSP/权限限制）
+  getImageDataUrl: (rel: string): Promise<string> => ipcRenderer.invoke('get-image-data-url', rel)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

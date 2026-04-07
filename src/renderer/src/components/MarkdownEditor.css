@@ -169,3 +169,45 @@
   text-decoration: underline;
   word-break: break-all;
 }
+
+/* MD 模式高度铺满 */
+.md-mode {
+  flex: 1;
+  height: 100%;
+  min-height: 0; /* 避免溢出时撑开父容器 */
+  display: flex;
+  flex-direction: column;
+}
+.md-mode .w-md-editor {
+  flex: 1;
+  height: 100% !important;
+}
+.md-mode .w-md-editor-content,
+.md-mode .w-md-editor-text-input,
+.md-mode .w-md-editor-preview,
+.md-mode .w-md-editor-preview .wmde-markdown {
+  height: 100% !important;
+}
+
+/* 让 MD 模式背景与其他模式一致（透明、继承文字颜色）*/
+.md-mode .w-md-editor,
+.md-mode .w-md-editor-content,
+.md-mode .w-md-editor-text-input,
+.md-mode .w-md-editor-preview,
+.md-mode .w-md-editor-preview .wmde-markdown,
+.md-mode .w-md-editor-toolbar,
+.md-mode .w-md-editor-toolbar ul {
+  background: transparent !important;
+  color: inherit;
+}
+/* 统一 MD 模式代码块样式为与非 MD 模式一致 */
+.md-mode .wmde-markdown pre,
+.md-mode .wmde-markdown code,
+.md-mode .w-md-editor-preview pre,
+.md-mode .w-md-editor-preview code {
+  background: transparent !important;
+  color: inherit !important;
+}
+.md-mode .wmde-markdown pre {
+  padding: 0 !important;
+}
