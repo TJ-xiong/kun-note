@@ -202,12 +202,19 @@
 }
 /* 统一 MD 模式代码块样式为与非 MD 模式一致 */
 .md-mode .wmde-markdown pre,
-.md-mode .wmde-markdown code,
-.md-mode .w-md-editor-preview pre,
-.md-mode .w-md-editor-preview code {
-  background: transparent !important;
-  color: inherit !important;
+.md-mode .w-md-editor-preview pre {
+  background: #2d2d2d !important;
+  padding: 10px !important;
+  border-radius: 4px !important;
+  overflow-x: auto !important;
+  margin: 0.5em 0 !important;
 }
-.md-mode .wmde-markdown pre {
-  padding: 0 !important;
+.md-mode .wmde-markdown code,
+.md-mode .w-md-editor-preview code {
+  background: #2d2d2d !important;
+  padding: 2px 4px !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  font-family: monospace !important;
+  color: #e0e0e0 !important;
 }
