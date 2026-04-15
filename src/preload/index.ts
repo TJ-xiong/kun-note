@@ -8,6 +8,8 @@ const api = {
   saveNote: (note: Note) => ipcRenderer.invoke('save-note', note),
   getNote: (id: string) => ipcRenderer.invoke('get-note', id),
   listNotes: () => ipcRenderer.invoke('list-notes'),
+  listNotesByParent: (parentId: string) => ipcRenderer.invoke('list-notes-by-parent', parentId),
+  searchNotes: (keyword: string) => ipcRenderer.invoke('search-notes', keyword),
   deleteNote: (id: string) => ipcRenderer.invoke('delete-note', id),
   handleTransparent: (isTransparent: boolean) =>
     ipcRenderer.invoke('handle-transparent', isTransparent),

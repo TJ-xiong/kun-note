@@ -5,77 +5,112 @@ import { FileMarkdownOutlined, FolderOpenOutlined, LeftOutlined } from '@ant-des
 import { useContextMenu } from '@renderer/hooks/useContextMenu'
 
 interface SliderMenuProps {
-  noteData: Note[]
   currentNote: Note | null
   handleChangeNote: (id: string) => void
   currParentId: string
   setCurrParentId: (id: string) => void
   loadList: () => Promise<void>
+  loadNotesByParent: (parentId: string) => Promise<Note[]>
   handleAddNote: (type: NoteType, parentId: string, title?: string) => Promise<void>
 }
 
-function handleNoteData(noteData: Note[]): Note[] {
-  // TODO: 处理笔记数据
-  const result: Note[] = []
-  const folders: Note[] = []
-  // 遍历noteData，将文件夹和笔记分开
-  noteData.forEach((item: Note) => {
-    if (item.type === 'folder') {
-      folders.push(item)
-    } else {
-      result.push(item)
-    }
-  })
-  // 将文件夹放到笔记前面
-  result.unshift(...folders)
-  return result
-}
-
 const App: React.FC<SliderMenuProps> = ({
-  loadList,
-  noteData,
+  loadNotesByParent,
   currentNote,
   handleChangeNote,
   currParentId,
   setCurrParentId,
   handleAddNote
 }) => {
-  // const [notes, setNotes] = useState<Note[]>([])
   const { Search } = Input
   type SearchProps = GetProps<typeof Input.Search>
-  const onSearch: SearchProps['onSearch'] = (value, _e, info) => console.log(info?.source, value)
+  const [, setSearchKeyword] = useState('')
+  const [searchResults, setSearchResults] = useState<Note[]>([])
+  const [isSearching, setIsSearching] = useState(false)
   const [showNotes, setShowNotes] = useState<Note[]>([])
   const [editingNote, setEditingNote] = useState<Note | null>(null)
+  const [currentFolderInfo, setCurrentFolderInfo] = useState<Note | null>(null) // 当前目录信息（用于返回）
+
+  // 切换目录时从数据库获取数据
+  const handleParentChange = useCallback(
+    async (newParentId: string) => {
+      if (newParentId !== 'root') {
+        // 获取当前目录的文件夹信息
+        const folderInfo = await window.api.getNote(newParentId)
+        setCurrentFolderInfo(folderInfo)
+      } else {
+        setCurrentFolderInfo(null)
+      }
+      setCurrParentId(newParentId)
+      const notes = await loadNotesByParent(newParentId)
+      // 文件夹放在前面
+      const folders = notes.filter((n) => n.type === 'folder')
+      const noteItems = notes.filter((n) => n.type === 'note')
+      setShowNotes([...folders, ...noteItems])
+    },
+    [loadNotesByParent, setCurrParentId]
+  )
+
+  // 初始化和目录切换时加载数据
+  useEffect(() => {
+    handleParentChange(currParentId)
+  }, [])
+
+  const onSearch: SearchProps['onSearch'] = async (value) => {
+    setSearchKeyword(value)
+    if (!value.trim()) {
+      return
+    }
+    setIsSearching(true)
+    try {
+      const results = await window.api.searchNotes(value.trim())
+      setSearchResults(results)
+    } catch (error) {
+      console.error('搜索失败:', error)
+      setSearchResults([])
+    }
+  }
+
+  const onSearchChange: SearchProps['onChange'] = (e) => {
+    const value = e.target.value
+    setSearchKeyword(value)
+    if (!value.trim()) {
+      // 清除搜索时，如果有正在编辑的笔记，切换到该笔记所在目录
+      setIsSearching(false)
+      setSearchResults([])
+      if (currentNote && currentNote.parentId) {
+        handleParentChange(currentNote.parentId)
+      }
+    }
+  }
 
   function handleClickItem(note: Note): void {
     if (note.type === 'folder') {
-      // TODO: 处理文件夹点击事件
-      setShowNotes(
-        showNotes.filter(
-          (item: Note) => item.parentId === note.id && item.parentId === currParentId
-        )
-      )
-      note.id && setCurrParentId(note.id)
+      // 文件夹：退出搜索状态，进入该文件夹
+      setIsSearching(false)
+      setSearchKeyword('')
+      setSearchResults([])
+      note.id && handleParentChange(note.id)
     }
     if (note.type === 'note') {
+      // 笔记：只打开笔记，保持搜索结果状态
       note.id && handleChangeNote(note.id)
     }
   }
 
   function getFolderName(): string {
-    if (!noteData) return ''
-    return noteData.filter((note: Note) => note.id === currParentId)[0].title
+    return currentFolderInfo?.title || ''
   }
 
   function handleClickBack(): void {
-    if (!noteData) return
-    const note = noteData.filter((note: Note) => note.id === currParentId)[0]
-    setCurrParentId(note.parentId)
+    if (currParentId !== 'root' && currentFolderInfo) {
+      handleParentChange(currentFolderInfo.parentId)
+    }
   }
 
   const handleDeleteNote = async (id: string): Promise<void> => {
     await window.api.deleteNote(id)
-    loadList()
+    handleParentChange(currParentId)
   }
   /**
    * 右键修改标题
@@ -123,7 +158,7 @@ const App: React.FC<SliderMenuProps> = ({
    */
   const handleUpdateNoteTitle = async (note: Note): Promise<void> => {
     window.api.saveNote(note).then(() => {
-      loadList()
+      handleParentChange(currParentId)
     })
   }
 
@@ -178,16 +213,10 @@ const App: React.FC<SliderMenuProps> = ({
     [bind]
   )
 
-  // 相当于 Vue 的 onMounted
-  useEffect(() => {
-    const newNotes = handleNoteData(noteData)
-    setShowNotes(newNotes.filter((item: Note) => item.parentId === currParentId))
-  }, [noteData, currParentId])
-
   return (
     <div className="slider-menu">
       <div>
-        <Search placeholder="关键字搜索" onSearch={onSearch} allowClear />
+        <Search placeholder="关键字搜索" onSearch={onSearch} onChange={onSearchChange} allowClear />
       </div>
       <div
         className="slider-container"
@@ -195,13 +224,17 @@ const App: React.FC<SliderMenuProps> = ({
           handleBlackMenu(e)
         }}
       >
-        {currParentId !== 'root' && (
+        {isSearching ? (
+          <div style={{ marginBottom: '8px', color: '#999', fontSize: '12px' }}>
+            找到 {searchResults.length} 个结果
+          </div>
+        ) : currParentId !== 'root' ? (
           <div>
             <LeftOutlined style={{ cursor: 'pointer' }} onClick={handleClickBack} />
             <span>{getFolderName()}</span>
           </div>
-        )}
-        {showNotes.map((item: Note) => {
+        ) : null}
+        {(isSearching ? searchResults : showNotes).map((item: Note) => {
           // 菜单项
           return (
             <div

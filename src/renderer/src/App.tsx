@@ -28,14 +28,18 @@ function App(): React.JSX.Element {
       notesData = notesData.sort((a, b) => b.title.localeCompare(a.title))
       console.log('所有笔记:', notesData)
       setNotes(notesData) // 更新状态，界面自动刷新
-      for (let i = 0; i < notesData.length; i++) {
-        const note = notesData[i]
-        if (note.parentId === currParentId && note.type === 'note') {
-          note.id && handleChangeNote(note.id) // 默认选中第一个笔记
-        }
-      }
     } catch (error) {
       console.error('加载笔记失败:', error)
+    }
+  }
+
+  // 根据 parentId 加载笔记
+  const loadNotesByParent = async (parentId: string): Promise<Note[]> => {
+    try {
+      return await window.api.listNotesByParent(parentId)
+    } catch (error) {
+      console.error('加载笔记失败:', error)
+      return []
     }
   }
 
@@ -96,7 +100,7 @@ function App(): React.JSX.Element {
           {sliderMenuShow ? (
             <SliderMenu
               loadList={loadList}
-              noteData={notes}
+              loadNotesByParent={loadNotesByParent}
               currParentId={currParentId}
               setCurrParentId={(id: string) => setCurrParentId(id)}
               currentNote={currentNote}

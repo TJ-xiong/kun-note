@@ -64,6 +64,25 @@ ipcMain.handle('list-notes', (): Note[] => {
   return db.prepare(`SELECT id, title, updatedAt, type, parentId FROM notes`).all() as Note[] // ORDER BY updatedAt DESC
 })
 
+// 根据 parentId 获取笔记
+ipcMain.handle('list-notes-by-parent', (_event, parentId: string): Note[] => {
+  return db
+    .prepare(`SELECT id, title, updatedAt, type, parentId FROM notes WHERE parentId=?`)
+    .all(parentId) as Note[]
+})
+
+// 搜索笔记（模糊查询标题、内容、文件夹名）
+ipcMain.handle('search-notes', (_event, keyword: string): Note[] => {
+  const pattern = `%${keyword}%`
+  return db
+    .prepare(
+      `SELECT id, title, content, updatedAt, type, parentId FROM notes
+       WHERE title LIKE ? OR content LIKE ?
+       ORDER BY updatedAt DESC`
+    )
+    .all(pattern, pattern) as Note[]
+})
+
 // 删除笔记
 ipcMain.handle('delete-note', (_event, id): number => {
   const result = db.prepare(`DELETE FROM notes WHERE id=?`).run(id)

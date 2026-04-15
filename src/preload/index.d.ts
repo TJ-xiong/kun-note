@@ -5,6 +5,8 @@ import { ipcRenderer } from 'electron'
 type Api = {
   saveNote: (note: NewOrUpdateNote) => Promise<Note>
   listNotes: () => Promise<Note[]>
+  listNotesByParent: (parentId: string) => Promise<Note[]>
+  searchNotes: (keyword: string) => Promise<Note[]>
   getNote: (id: string) => Promise<Note | null>
   deleteNote: (id: string) => Promise<number>
   handleTransparent: (isTransparent: boolean) => void
