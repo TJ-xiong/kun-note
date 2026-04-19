@@ -1,11 +1,11 @@
 /// <reference types="vite/client" />
 
-interface AppSettings {
+export interface AppSettings {
   autoHideOnMouseLeave: boolean
   hideDelay: number
 }
 
-interface Api {
+export interface Api {
   saveNote: (note: any) => Promise<any>
   getNote: (id: string) => Promise<any>
   listNotes: () => Promise<any[]>
