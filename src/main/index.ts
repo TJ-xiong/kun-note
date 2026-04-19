@@ -56,19 +56,52 @@ fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 // 初始化数据库
 const db = new Database(dbPath)
 
-// 建表：id, title, content, updatedAt, type, parent_id, isPinned
-db.prepare(
-  ` CREATE TABLE IF NOT EXISTS notes (
-    id TEXT PRIMARY KEY,
-    title TEXT,
-    content TEXT,
-    type TEXT,
-    parentId TEXT,
-    createdAt INTEGER,
-    updatedAt INTEGER,
-    isPinned INTEGER DEFAULT 0
-  )`
-).run()
+// 检查并修复数据库结构
+function checkDatabaseSchema(): void {
+  // 检查表是否存在
+  const tableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='notes'`).get()
+  if (!tableExists) {
+    // 表不存在，创建新表
+    console.log('[DB] Creating notes table...')
+    db.prepare(
+      ` CREATE TABLE IF NOT EXISTS notes (
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        content TEXT,
+        type TEXT,
+        parentId TEXT,
+        createdAt INTEGER,
+        updatedAt INTEGER,
+        isPinned INTEGER DEFAULT 0
+      )`
+    ).run()
+    console.log('[DB] Notes table created.')
+    return
+  }
+
+  // 表存在，检查字段
+  console.log('[DB] Checking notes table schema...')
+  const columns = db.prepare(`PRAGMA table_info(notes)`).all() as { name: string }[]
+  const columnNames = columns.map((col) => col.name)
+
+  // 需要的字段列表
+  const requiredColumns: { name: string; sql: string }[] = [
+    { name: 'isPinned', sql: 'isPinned INTEGER DEFAULT 0' }
+  ]
+
+  // 检查并添加缺失的字段
+  for (const col of requiredColumns) {
+    if (!columnNames.includes(col.name)) {
+      console.log(`[DB] Adding missing column: ${col.name}`)
+      db.prepare(`ALTER TABLE notes ADD COLUMN ${col.sql}`).run()
+      console.log(`[DB] Column ${col.name} added.`)
+    }
+  }
+  console.log('[DB] Database schema check complete.')
+}
+
+// 初始化时检查数据库结构
+checkDatabaseSchema()
 
 // 插入/更新笔记
 ipcMain.handle('save-note', (_event, { id, title, content, type, parentId, isPinned }): Note => {
