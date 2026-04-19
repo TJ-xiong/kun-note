@@ -43,9 +43,21 @@ const App: React.FC<SliderMenuProps> = ({
       }
       setCurrParentId(newParentId)
       const notes = await loadNotesByParent(newParentId)
-      // 文件夹放在前面
-      const folders = notes.filter((n) => n.type === 'folder')
-      const noteItems = notes.filter((n) => n.type === 'note')
+      // 文件夹在前，笔记在后，置顶的优先显示，都按名称降序排序
+      const folders = notes
+        .filter((n) => n.type === 'folder')
+        .sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1
+          if (!a.isPinned && b.isPinned) return 1
+          return b.title.localeCompare(a.title)
+        })
+      const noteItems = notes
+        .filter((n) => n.type === 'note')
+        .sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1
+          if (!a.isPinned && b.isPinned) return 1
+          return b.title.localeCompare(a.title)
+        })
       setShowNotes([...folders, ...noteItems])
     },
     [loadNotesByParent, setCurrParentId]
@@ -165,11 +177,29 @@ const App: React.FC<SliderMenuProps> = ({
   // 顶层声明 hook
   const { bind } = useContextMenu()
 
+  // 切换置顶状态
+  const handleTogglePin = (note: Note): void => {
+    if (note.id) {
+      window.api.togglePin(note.id).then(() => {
+        handleParentChange(currParentId)
+      })
+    }
+  }
+
   const handleContextMenu = useCallback(
     (note: Note) => (e: React.MouseEvent) => {
       e.stopPropagation() // ✅ 阻止父组件右键事件触发
       bind.onContextMenu(e, [
         { label: '重命名', onClick: () => handleSettingTitle(note) },
+        {
+          divider: true,
+          label: '',
+          onClick: () => {}
+        },
+        {
+          label: note.isPinned ? '取消置顶' : '置顶',
+          onClick: () => handleTogglePin(note)
+        },
         {
           divider: true,
           label: '',
@@ -185,7 +215,7 @@ const App: React.FC<SliderMenuProps> = ({
         }
       ])
     },
-    [bind]
+    [bind, handleTogglePin]
   )
 
   const handleBlackMenu = useCallback(
@@ -254,7 +284,8 @@ const App: React.FC<SliderMenuProps> = ({
                 cursor: 'pointer',
                 gap: '8px',
                 backgroundColor: currentNote?.id === item.id ? '#f0f0f0' : '#fff',
-                border: currentNote?.id === item.id ? '1px solid red' : 'none'
+                border: item.isPinned ? '1px solid #1890ff' : currentNote?.id === item.id ? '1px solid red' : 'none',
+                boxShadow: item.isPinned ? '0 2px 4px rgba(24, 144, 255, 0.2)' : 'none'
               }}
             >
               {item.type === 'folder' ? <FolderOpenOutlined /> : <FileMarkdownOutlined />}

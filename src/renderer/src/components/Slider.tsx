@@ -10,9 +10,16 @@ interface SliderProps {
 }
 
 const App: React.FC<SliderProps> = ({ noteData, currentNote, handleChangeNote, currParentId }) => {
+  // 排序：置顶优先，其余按名称降序
+  const sortedNotes = [...noteData].sort((a, b) => {
+    if (a.isPinned && !b.isPinned) return -1
+    if (!a.isPinned && b.isPinned) return 1
+    return b.title.localeCompare(a.title)
+  })
+
   return (
     <div className="slider pointer-event-none">
-      {noteData.map((note: Note) => {
+      {sortedNotes.map((note: Note) => {
         const isActive = currentNote?.id === note?.id
         return (
           note.type !== 'folder' &&
@@ -20,9 +27,9 @@ const App: React.FC<SliderProps> = ({ noteData, currentNote, handleChangeNote, c
             <button
               key={note.id}
               onClick={() => handleChangeNote(note.id as string)}
-              className={`slider-bookmark ${isActive ? 'slider-bookmark-active' : ''}`}
+              className={`slider-bookmark ${isActive ? 'slider-bookmark-active' : ''} ${note.isPinned ? 'slider-bookmark-pinned' : ''}`}
             >
-              <span className="slider-bookmark-indicator" />
+              <span className={`slider-bookmark-indicator ${note.isPinned ? 'slider-bookmark-indicator-pinned' : ''}`} />
               <span className="slider-bookmark-text" title={note.title}>
                 {note.title}
               </span>

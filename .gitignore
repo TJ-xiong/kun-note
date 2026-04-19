@@ -1,9 +1,40 @@
+# Dependencies
 node_modules
+
+# Build output
 dist
 out
-.DS_Store
-.eslintcache
-*.log*
+build/*.ico
+build/*.icns
+build/*.png
+!build/icon.png
+
+# IDE
 .idea
 .vscode
-package-lock.json
+.trae/
+.claude/
+
+# Logs
+*.log*
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Cache
+.eslintcache
+.cache/
+coverage/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Lock files (use pnpm-lock.yaml for pnpm projects)
+# package-lock.json
+pnpm-lock.yaml
+yarn.lock

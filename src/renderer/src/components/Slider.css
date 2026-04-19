@@ -92,3 +92,25 @@
   padding-left: 6px;
 }
 
+/* 置顶书签样式 */
+.slider-bookmark-pinned {
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  border: 1px solid #ffc107;
+}
+
+.slider-bookmark-pinned:hover {
+  background: linear-gradient(135deg, #fff3cd 0%, #ffe082 100%);
+}
+
+.slider-bookmark-pinned.slider-bookmark-active {
+  background: linear-gradient(135deg, #ffe082 0%, #ffd54f 100%);
+  border-color: #ffb300;
+}
+
+/* 置顶指示条样式 */
+.slider-bookmark-indicator-pinned {
+  background: linear-gradient(180deg, #ffc107 0%, #ff9800 100%) !important;
+  opacity: 1 !important;
+  transform: scaleY(1) !important;
+}
+

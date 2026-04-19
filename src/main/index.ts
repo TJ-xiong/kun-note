@@ -16,6 +16,38 @@ let hideTimer: NodeJS.Timeout | null = null // 隐藏定时器
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null // 系统托盘图标
 const windows = new Map<string, BrowserWindow>() // 跟踪所有打开的窗口
+// 设置相关
+interface AppSettings {
+  autoHideOnMouseLeave: boolean
+  hideDelay: number // 毫秒
+}
+const defaultSettings: AppSettings = {
+  autoHideOnMouseLeave: true,
+  hideDelay: 3000
+}
+let appSettings: AppSettings = { ...defaultSettings }
+// 设置文件路径
+const settingsPath = path.join(app.getPath('userData'), 'settings.json')
+
+function loadSettings(): void {
+  try {
+    if (fs.existsSync(settingsPath)) {
+      const data = fs.readFileSync(settingsPath, 'utf-8')
+      appSettings = { ...defaultSettings, ...JSON.parse(data) }
+    }
+  } catch (e) {
+    console.error('Failed to load settings:', e)
+  }
+}
+
+function saveSettings(): void {
+  try {
+    fs.writeFileSync(settingsPath, JSON.stringify(appSettings, null, 2))
+  } catch (e) {
+    console.error('Failed to save settings:', e)
+  }
+}
+
 // 数据库路径（放在用户数据目录）
 const dbPath = path.join(app.getPath('userData'), 'notes.db')
 console.log(dbPath)
@@ -24,7 +56,7 @@ fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 // 初始化数据库
 const db = new Database(dbPath)
 
-// 建表：id, title, content, updatedAt, type, parent_id
+// 建表：id, title, content, updatedAt, type, parent_id, isPinned
 db.prepare(
   ` CREATE TABLE IF NOT EXISTS notes (
     id TEXT PRIMARY KEY,
@@ -33,23 +65,24 @@ db.prepare(
     type TEXT,
     parentId TEXT,
     createdAt INTEGER,
-    updatedAt INTEGER
+    updatedAt INTEGER,
+    isPinned INTEGER DEFAULT 0
   )`
 ).run()
 
 // 插入/更新笔记
-ipcMain.handle('save-note', (_event, { id, title, content, type, parentId }): Note => {
+ipcMain.handle('save-note', (_event, { id, title, content, type, parentId, isPinned }): Note => {
   const now = Date.now()
   if (id) {
     db.prepare(
-      `UPDATE notes SET title=?, content=?, updatedAt=?, type=?, parentId=? WHERE id=?`
-    ).run(title, content, now, type, parentId, id)
+      `UPDATE notes SET title=?, content=?, updatedAt=?, type=?, parentId=?, isPinned=? WHERE id=?`
+    ).run(title, content, now, type, parentId, isPinned ? 1 : 0, id)
     return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
   } else {
     const id = uuidv4() // 生成唯一id
     db.prepare(
-      `INSERT INTO notes (id, title, content, createdAt, updatedAt, type, parentId) VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(id, title, content, now, now, type, parentId)
+      `INSERT INTO notes (id, title, content, createdAt, updatedAt, type, parentId, isPinned) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(id, title, content, now, now, type, parentId, isPinned ? 1 : 0)
     return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
   }
 })
@@ -61,13 +94,13 @@ ipcMain.handle('get-note', (_event, id): Note => {
 
 // 获取所有笔记（仅 id 和标题）
 ipcMain.handle('list-notes', (): Note[] => {
-  return db.prepare(`SELECT id, title, updatedAt, type, parentId FROM notes`).all() as Note[] // ORDER BY updatedAt DESC
+  return db.prepare(`SELECT id, title, updatedAt, type, parentId, isPinned FROM notes`).all() as Note[]
 })
 
 // 根据 parentId 获取笔记
 ipcMain.handle('list-notes-by-parent', (_event, parentId: string): Note[] => {
   return db
-    .prepare(`SELECT id, title, updatedAt, type, parentId FROM notes WHERE parentId=?`)
+    .prepare(`SELECT id, title, updatedAt, type, parentId, isPinned FROM notes WHERE parentId=?`)
     .all(parentId) as Note[]
 })
 
@@ -87,6 +120,15 @@ ipcMain.handle('search-notes', (_event, keyword: string): Note[] => {
 ipcMain.handle('delete-note', (_event, id): number => {
   const result = db.prepare(`DELETE FROM notes WHERE id=?`).run(id)
   return result.changes
+})
+
+// 切换置顶状态
+ipcMain.handle('toggle-pin', (_event, id: string): Note => {
+  const note = db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
+  if (!note) throw new Error('Note not found')
+  const newPinned = note.isPinned ? 0 : 1
+  db.prepare(`UPDATE notes SET isPinned=? WHERE id=?`).run(newPinned, id)
+  return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
 })
 
 // 处理透明区域点击穿透
@@ -233,8 +275,8 @@ function updateWindowPosition(): void {
   const insideWindow = isCursorInsideWindow(cursor, bounds)
 
   if (!insideWindow && !isHidden) {
-    // 鼠标离开 → 启动延迟隐藏
-    if (!hideTimer) {
+    // 鼠标离开 → 启动延迟隐藏（如果启用）
+    if (!hideTimer && appSettings.autoHideOnMouseLeave) {
       hideTimer = setTimeout(() => {
         if (!mainWindow || mainWindow.isDestroyed()) return // ✅ 窗口已销毁
         // 再次确认鼠标是否还在外面
@@ -244,7 +286,7 @@ function updateWindowPosition(): void {
           hideWindowSmooth()
         }
         hideTimer = null
-      }, 100)
+      }, appSettings.hideDelay)
     }
   } else if (insideWindow && isHidden) {
     // 鼠标回来 → 取消隐藏
@@ -289,6 +331,10 @@ function showWindowSmooth(): void {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+
+// 加载设置
+loadSettings()
+
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron.kun-notes')
@@ -303,6 +349,17 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', (_event: Electron.IpcMainEvent, title: string) => {
     console.log('pong', title)
+  })
+
+  // 设置相关 IPC handlers
+  ipcMain.handle('get-settings', (): AppSettings => {
+    return appSettings
+  })
+
+  ipcMain.handle('save-settings', (_event, settings: Partial<AppSettings>): AppSettings => {
+    appSettings = { ...appSettings, ...settings }
+    saveSettings()
+    return appSettings
   })
 
   // IPC handler for creating new windows

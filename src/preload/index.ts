@@ -4,6 +4,10 @@ import { Note } from '../types/note'
 import { HttpRequestConfig } from '../types/http'
 
 // Custom APIs for renderer
+interface AppSettings {
+  autoHideOnMouseLeave: boolean
+  hideDelay: number
+}
 const api = {
   saveNote: (note: Note) => ipcRenderer.invoke('save-note', note),
   getNote: (id: string) => ipcRenderer.invoke('get-note', id),
@@ -11,6 +15,7 @@ const api = {
   listNotesByParent: (parentId: string) => ipcRenderer.invoke('list-notes-by-parent', parentId),
   searchNotes: (keyword: string) => ipcRenderer.invoke('search-notes', keyword),
   deleteNote: (id: string) => ipcRenderer.invoke('delete-note', id),
+  togglePin: (id: string) => ipcRenderer.invoke('toggle-pin', id),
   handleTransparent: (isTransparent: boolean) =>
     ipcRenderer.invoke('handle-transparent', isTransparent),
   openOrCloseWindow: (route: string) => ipcRenderer.invoke('open-or-close-window', route),
@@ -21,7 +26,11 @@ const api = {
   // 获取图片目录的绝对路径（用于渲染时解析相对路径）
   getImagesDir: (): Promise<string> => ipcRenderer.invoke('get-images-dir'),
   // 将相对图片路径转换为 data URL（用于 dev 环境避免 file:/// CSP/权限限制）
-  getImageDataUrl: (rel: string): Promise<string> => ipcRenderer.invoke('get-image-data-url', rel)
+  getImageDataUrl: (rel: string): Promise<string> => ipcRenderer.invoke('get-image-data-url', rel),
+  // 设置相关
+  getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('get-settings'),
+  saveSettings: (settings: Partial<AppSettings>): Promise<AppSettings> =>
+    ipcRenderer.invoke('save-settings', settings)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
