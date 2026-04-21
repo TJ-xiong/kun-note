@@ -16,6 +16,7 @@ interface SliderMenuProps {
 
 const App: React.FC<SliderMenuProps> = ({
   loadNotesByParent,
+  loadList,
   currentNote,
   handleChangeNote,
   currParentId,
@@ -122,6 +123,7 @@ const App: React.FC<SliderMenuProps> = ({
 
   const handleDeleteNote = async (id: string): Promise<void> => {
     await window.api.deleteNote(id)
+    loadList() // 刷新父组件数据
     handleParentChange(currParentId)
   }
   /**
@@ -170,6 +172,7 @@ const App: React.FC<SliderMenuProps> = ({
    */
   const handleUpdateNoteTitle = async (note: Note): Promise<void> => {
     window.api.saveNote(note).then(() => {
+      loadList() // 刷新父组件数据
       handleParentChange(currParentId)
     })
   }
@@ -181,6 +184,7 @@ const App: React.FC<SliderMenuProps> = ({
   const handleTogglePin = (note: Note): void => {
     if (note.id) {
       window.api.togglePin(note.id).then(() => {
+        loadList() // 刷新父组件数据
         handleParentChange(currParentId)
       })
     }
@@ -223,8 +227,10 @@ const App: React.FC<SliderMenuProps> = ({
       bind.onContextMenu(e, [
         {
           label: '新建笔记',
-          onClick: () => {
-            handleAddNote('note', currParentId, '笔记')
+          onClick: async () => {
+            await handleAddNote('note', currParentId, '笔记')
+            loadList() // 刷新父组件数据
+            handleParentChange(currParentId)
           }
         },
         {
@@ -234,13 +240,15 @@ const App: React.FC<SliderMenuProps> = ({
         },
         {
           label: '新建文件夹',
-          onClick: () => {
-            handleAddNote('folder', currParentId, '文件夹')
+          onClick: async () => {
+            await handleAddNote('folder', currParentId, '文件夹')
+            loadList() // 刷新父组件数据
+            handleParentChange(currParentId)
           }
         }
       ])
     },
-    [bind]
+    [bind, handleAddNote, loadList, handleParentChange]
   )
 
   return (
