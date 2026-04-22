@@ -5,6 +5,7 @@ import MDEditor from '@uiw/react-md-editor'
 import '@uiw/react-md-editor/markdown-editor.css'
 import '@uiw/react-markdown-preview/markdown.css'
 import './MarkdownEditor.css'
+import { getCommands, getExtraCommands } from '@uiw/react-md-editor/commands-cn'
 
 interface MarkdownEditorProps {
   value?: string
@@ -47,6 +48,19 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value = '', onChange })
       return <img {...(props as any)} src={resolvedSrc} alt={alt} />
     }
   }
+
+  // 过滤掉不需要的命令（全屏、帮助、重复的代码预览按钮）
+  const allCommands = [...getCommands(), ...getExtraCommands()].filter((cmd) => {
+    // fullscreen 和 help 通过 keyCommand 过滤
+    if (cmd.keyCommand === 'fullscreen' || cmd.keyCommand === 'help') {
+      return false
+    }
+    // codeEdit、codeLive、codePreview 通过 name 过滤
+    if (cmd.name === 'edit' || cmd.name === 'live' || cmd.name === 'preview') {
+      return false
+    }
+    return true
+  })
 
   // MD 模式下在光标处插入文本
   const insertAtMdSelection = (text: string) => {
@@ -108,12 +122,7 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value = '', onChange })
               setContent(nv)
               onChange?.(nv)
             }}
-            commandsFilter={(cmd) => {
-              if (cmd.keyCommand === 'fullscreen') {
-                return false
-              }
-              return cmd
-            }}
+            commands={allCommands}
             preview="live"
             previewOptions={{ remarkPlugins: [remarkGfm, remarkBreaks], components }}
             style={{ height: '100%' }}
