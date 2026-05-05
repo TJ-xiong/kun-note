@@ -36,5 +36,5 @@ coverage/
 
 # Lock files (use pnpm-lock.yaml for pnpm projects)
 # package-lock.json
-pnpm-lock.yaml
+# pnpm-lock.yaml
 yarn.lock
