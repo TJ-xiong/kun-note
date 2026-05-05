@@ -6,6 +6,7 @@ import '@uiw/react-md-editor/markdown-editor.css'
 import '@uiw/react-markdown-preview/markdown.css'
 import './MarkdownEditor.css'
 import { getCommands, getExtraCommands } from '@uiw/react-md-editor/commands-cn'
+import type { ICommand } from '@uiw/react-md-editor'
 
 interface MarkdownEditorProps {
   value?: string
@@ -49,18 +50,24 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value = '', onChange })
     }
   }
 
-  // 过滤掉不需要的命令（全屏、帮助、重复的代码预览按钮）
-  const allCommands = [...getCommands(), ...getExtraCommands()].filter((cmd) => {
-    // fullscreen 和 help 通过 keyCommand 过滤
-    if (cmd.keyCommand === 'fullscreen' || cmd.keyCommand === 'help') {
-      return false
-    }
-    // codeEdit、codeLive、codePreview 通过 name 过滤
-    if (cmd.name === 'edit' || cmd.name === 'live' || cmd.name === 'preview') {
-      return false
-    }
-    return true
-  })
+  // 过滤掉不需要的命令（全屏、帮助、重复的代码预览按钮），并清理多余分割线
+  const filterCommands = (cmds: ICommand[]): ICommand[] =>
+    cmds
+      .filter((cmd) => {
+        if (cmd.keyCommand === 'fullscreen' || cmd.keyCommand === 'help') return false
+        return true
+      })
+      .filter((cmd, i, arr) => {
+        // 移除连续的分割线和末尾的分割线
+        if (cmd.keyCommand === 'divider') {
+          if (i === arr.length - 1) return false // 末尾分割线
+          if (i > 0 && arr[i - 1].keyCommand === 'divider') return false // 连续分割线
+        }
+        return true
+      })
+
+  const commands = filterCommands(getCommands())
+  const extraCommands = filterCommands(getExtraCommands())
 
   // MD 模式下在光标处插入文本
   const insertAtMdSelection = (text: string) => {
@@ -122,8 +129,9 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value = '', onChange })
               setContent(nv)
               onChange?.(nv)
             }}
-            commands={allCommands}
-            preview="live"
+            commands={commands}
+            extraCommands={extraCommands}
+            preview="edit"
             previewOptions={{ remarkPlugins: [remarkGfm, remarkBreaks], components }}
             style={{ height: '100%' }}
           />

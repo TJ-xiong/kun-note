@@ -8,7 +8,7 @@ import fs from 'fs'
 import { animateWindowY, isCursorInsideWindow, isCursorNearTopOfWindow } from './utils/animation'
 import { Note } from '../types/note'
 import { v4 as uuidv4 } from 'uuid'
-import './ipc/request'
+import './ipc/auth'
 
 let isAnimating = false // 动画标志
 let isHidden = false // 窗口状态标志
@@ -217,7 +217,7 @@ function createWindow(page: string = 'main'): BrowserWindow {
   // Create the browser window.
   const window = new BrowserWindow({
     icon,
-    width: 460,
+    width: 520,
     height: 570,
     center: true, // 居中显示
     minWidth: 360,

@@ -1,0 +1,495 @@
+.settings-container {
+  height: 100vh;
+  background-color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 标题栏 */
+.settings-titlebar {
+  height: 40px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e8e8e8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+}
+
+.settings-titlebar-drag {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.settings-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.settings-close-btn {
+  -webkit-app-region: no-drag;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.15s ease;
+}
+
+.settings-close-btn:hover {
+  background-color: #e8e8e8;
+  color: #333;
+}
+
+.settings-close-btn:active {
+  background-color: #d9d9d9;
+}
+
+/* 内容区域 */
+.settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.settings-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settings-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-content::-webkit-scrollbar-thumb {
+  background-color: #d9d9d9;
+  border-radius: 3px;
+}
+
+.settings-content::-webkit-scrollbar-thumb:hover {
+  background-color: #bfbfbf;
+}
+
+/* 区块 */
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.settings-section-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e8f4fd;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1890ff;
+}
+
+.settings-section-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* 卡片 */
+.settings-card {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* 设置项 */
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  transition: background-color 0.15s ease;
+}
+
+.settings-item:hover {
+  background-color: #fafafa;
+}
+
+.settings-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-item-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.settings-item-desc {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.4;
+}
+
+/* 分割线 */
+.settings-divider {
+  height: 1px;
+  background-color: #f0f0f0;
+  margin: 0 20px;
+}
+
+/* 开关 */
+.settings-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.settings-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.settings-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #d9d9d9;
+  transition: all 0.2s ease;
+  border-radius: 12px;
+}
+
+.settings-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: all 0.2s ease;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.settings-switch input:checked + .settings-switch-slider {
+  background-color: #1890ff;
+}
+
+.settings-switch input:checked + .settings-switch-slider:before {
+  transform: translateX(20px);
+}
+
+.settings-switch input:disabled + .settings-switch-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 滑块 */
+.settings-slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.settings-slider {
+  width: 120px;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e8e8e8;
+  border-radius: 2px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #1890ff;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(24, 144, 255, 0.3);
+  transition: all 0.15s ease;
+}
+
+.settings-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 6px rgba(24, 144, 255, 0.4);
+}
+
+.settings-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-slider:disabled::-webkit-slider-thumb {
+  cursor: not-allowed;
+  background: #bfbfbf;
+  box-shadow: none;
+}
+
+.settings-slider-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  min-width: 32px;
+  text-align: right;
+}
+
+/* 用户信息 */
+.settings-user-profile {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  gap: 14px;
+}
+
+.settings-user-avatar {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #1890ff, #096dd9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.settings-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-user-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.settings-user-email {
+  font-size: 13px;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-logout-btn {
+  padding: 8px 16px;
+  background-color: #fff1f0;
+  color: #ff4d4f;
+  border: 1px solid #ffa39e;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.settings-logout-btn:hover {
+  background-color: #ff4d4f;
+  color: white;
+  border-color: #ff4d4f;
+}
+
+/* 登录提示 */
+.settings-login-prompt {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  gap: 14px;
+}
+
+.settings-login-icon {
+  width: 44px;
+  height: 44px;
+  background-color: #f5f5f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+  flex-shrink: 0;
+}
+
+.settings-login-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-login-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.settings-login-desc {
+  font-size: 12px;
+  color: #888;
+}
+
+.settings-login-btn {
+  padding: 8px 20px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.settings-login-btn:hover {
+  background-color: #40a9ff;
+}
+
+.settings-login-btn:active {
+  background-color: #096dd9;
+}
+
+/* 登录表单 */
+.settings-login-form {
+  padding: 20px;
+}
+
+.settings-form-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.settings-form-error {
+  padding: 10px 12px;
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 8px;
+  color: #ff4d4f;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.settings-form-group {
+  margin-bottom: 16px;
+}
+
+.settings-form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.settings-form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  background-color: #fff;
+  transition: all 0.15s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.settings-form-input::placeholder {
+  color: #bfbfbf;
+}
+
+.settings-form-input:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.settings-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.settings-form-submit {
+  flex: 1;
+  padding: 10px 16px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.settings-form-submit:hover {
+  background-color: #40a9ff;
+}
+
+.settings-form-submit:active {
+  background-color: #096dd9;
+}
+
+.settings-form-submit:disabled {
+  background-color: #91caff;
+  cursor: not-allowed;
+}
+
+.settings-form-cancel {
+  padding: 10px 16px;
+  background-color: #f5f5f5;
+  color: #666;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.settings-form-cancel:hover {
+  background-color: #e8e8e8;
+  color: #333;
+}

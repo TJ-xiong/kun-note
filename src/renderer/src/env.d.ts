@@ -15,12 +15,14 @@ export interface Api {
   togglePin: (id: string) => Promise<any>
   handleTransparent: (isTransparent: boolean) => Promise<void>
   openOrCloseWindow: (route: string) => Promise<void>
-  request: <T = unknown>(config: any) => Promise<T>
   saveImage: (dataUrl: string) => Promise<string>
   getImagesDir: () => Promise<string>
   getImageDataUrl: (rel: string) => Promise<string>
   getSettings: () => Promise<AppSettings>
   saveSettings: (settings: Partial<AppSettings>) => Promise<AppSettings>
+  authLogin: (username: string, password: string) => Promise<any>
+  authLogout: () => Promise<void>
+  authGetUser: () => Promise<any>
 }
 
 declare global {

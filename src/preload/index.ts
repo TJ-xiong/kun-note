@@ -1,7 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { Note } from '../types/note'
-import { HttpRequestConfig } from '../types/http'
+import { LoginResponse, UserInfo } from '../types/auth'
 
 // Custom APIs for renderer
 interface AppSettings {
@@ -19,8 +19,6 @@ const api = {
   handleTransparent: (isTransparent: boolean) =>
     ipcRenderer.invoke('handle-transparent', isTransparent),
   openOrCloseWindow: (route: string) => ipcRenderer.invoke('open-or-close-window', route),
-  request: <T = unknown>(config: HttpRequestConfig): Promise<T> =>
-    ipcRenderer.invoke('http-request', config),
   // 保存剪贴板图片到本地，返回相对路径（./images/xxx）
   saveImage: (dataUrl: string): Promise<string> => ipcRenderer.invoke('save-image', dataUrl),
   // 获取图片目录的绝对路径（用于渲染时解析相对路径）
@@ -30,7 +28,11 @@ const api = {
   // 设置相关
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings: Partial<AppSettings>): Promise<AppSettings> =>
-    ipcRenderer.invoke('save-settings', settings)
+    ipcRenderer.invoke('save-settings', settings),
+  authLogin: (username: string, password: string): Promise<LoginResponse> =>
+    ipcRenderer.invoke('auth-login', username, password),
+  authLogout: (): Promise<void> => ipcRenderer.invoke('auth-logout'),
+  authGetUser: (): Promise<UserInfo> => ipcRenderer.invoke('auth-get-user')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
