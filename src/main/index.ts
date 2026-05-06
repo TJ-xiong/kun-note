@@ -15,6 +15,7 @@ let isHidden = false // 窗口状态标志
 let hideTimer: NodeJS.Timeout | null = null // 隐藏定时器
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null // 系统托盘图标
+let lastBounds: Electron.Rectangle | null = null // 窗口隐藏前的位置缓存
 const windows = new Map<string, BrowserWindow>() // 跟踪所有打开的窗口
 // 设置相关
 interface AppSettings {
@@ -59,7 +60,9 @@ const db = new Database(dbPath)
 // 检查并修复数据库结构
 function checkDatabaseSchema(): void {
   // 检查表是否存在
-  const tableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='notes'`).get()
+  const tableExists = db
+    .prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='notes'`)
+    .get()
   if (!tableExists) {
     // 表不存在，创建新表
     console.log('[DB] Creating notes table...')
@@ -127,7 +130,9 @@ ipcMain.handle('get-note', (_event, id): Note => {
 
 // 获取所有笔记（仅 id 和标题）
 ipcMain.handle('list-notes', (): Note[] => {
-  return db.prepare(`SELECT id, title, updatedAt, type, parentId, isPinned FROM notes`).all() as Note[]
+  return db
+    .prepare(`SELECT id, title, updatedAt, type, parentId, isPinned FROM notes`)
+    .all() as Note[]
 })
 
 // 根据 parentId 获取笔记
@@ -208,7 +213,7 @@ ipcMain.handle('get-image-data-url', (_event, rel: string): string => {
   const abs = path.join(imagesDir, name)
   if (!fs.existsSync(abs)) throw new Error('Image not found')
   const buf = fs.readFileSync(abs)
-  const ext = (path.extname(name).slice(1).toLowerCase() || 'png')
+  const ext = path.extname(name).slice(1).toLowerCase() || 'png'
   const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`
   return `data:${mime};base64,${buf.toString('base64')}`
 })
@@ -361,135 +366,153 @@ function showWindowSmooth(): void {
   )
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-
-// 加载设置
-loadSettings()
-
-app.whenReady().then(() => {
-  // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron.kun-notes')
-
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
-
-  // IPC test
-  ipcMain.on('ping', (_event: Electron.IpcMainEvent, title: string) => {
-    console.log('pong', title)
-  })
-
-  // 设置相关 IPC handlers
-  ipcMain.handle('get-settings', (): AppSettings => {
-    return appSettings
-  })
-
-  ipcMain.handle('save-settings', (_event, settings: Partial<AppSettings>): AppSettings => {
-    appSettings = { ...appSettings, ...settings }
-    saveSettings()
-    return appSettings
-  })
-
-  // IPC handler for creating new windows
-  ipcMain.handle('open-or-close-window', (_event, page: string) => {
-    const win = windows.get(page)
-    if (win) {
-      win.close()
-    } else {
-      createWindow(page)
-    }
-  })
-
-  // ipcMain.on('window-minimize', () => {
-  //   mainWindow?.minimize()
-  // })
-
-  // ipcMain.on('window-close', () => {
-  //   mainWindow?.close()
-  // })
-
-  mainWindow = createWindow('main')
-
-  // 创建托盘图标
-  const iconPath = path.join(icon) // 建议用 16x16 或 32x32 PNG
-  tray = new Tray(iconPath) // 设置托盘图标的菜单
-  let lastBounds: Electron.Rectangle | null = null
-
-  function showWindow(): void {
+// 单实例锁：防止重复打开窗口
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    // 用户再次点击应用图标时，聚焦已有窗口
     if (!mainWindow || mainWindow.isDestroyed()) return
-    // 如果有缓存的窗口位置和大小，恢复
-    if (lastBounds) {
+    const bounds = mainWindow.getBounds()
+    const isOffScreen = bounds.x === 9999 && bounds.y === 9999
+    if (isOffScreen && lastBounds) {
       mainWindow.setBounds(lastBounds)
     }
-    mainWindow.showInactive()
+    if (mainWindow.isMinimized()) mainWindow.restore()
+    mainWindow.show()
     mainWindow.focus()
-  }
+  })
 
-  function hideWindow(): void {
-    if (!mainWindow || mainWindow.isDestroyed()) return
-    // 缓存当前窗口位置和大小
-    lastBounds = mainWindow.getBounds()
-    // 移出屏幕模拟隐藏
-    mainWindow.setBounds({ x: 9999, y: 9999, width: 0, height: 0 })
-  }
+  // This method will be called when Electron has finished
+  // initialization and is ready to create browser windows.
+  // Some APIs can only be used after this event occurs.
 
-  // 托盘菜单
-  const contextMenu = Menu.buildFromTemplate([
-    {
-      label: '显示窗口',
-      click: () => showWindow()
-    },
-    {
-      label: '隐藏窗口',
-      click: () => hideWindow()
-    },
-    {
-      label: '退出',
-      click: () => app.quit()
+  // 加载设置
+  loadSettings()
+
+  app.whenReady().then(() => {
+    // Set app user model id for windows
+    electronApp.setAppUserModelId('com.electron.kun-notes')
+
+    // Default open or close DevTools by F12 in development
+    // and ignore CommandOrControl + R in production.
+    // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
+
+    // IPC test
+    ipcMain.on('ping', (_event: Electron.IpcMainEvent, title: string) => {
+      console.log('pong', title)
+    })
+
+    // 设置相关 IPC handlers
+    ipcMain.handle('get-settings', (): AppSettings => {
+      return appSettings
+    })
+
+    ipcMain.handle('save-settings', (_event, settings: Partial<AppSettings>): AppSettings => {
+      appSettings = { ...appSettings, ...settings }
+      saveSettings()
+      return appSettings
+    })
+
+    // IPC handler for creating new windows
+    ipcMain.handle('open-or-close-window', (_event, page: string) => {
+      const win = windows.get(page)
+      if (win) {
+        win.close()
+      } else {
+        createWindow(page)
+      }
+    })
+
+    // ipcMain.on('window-minimize', () => {
+    //   mainWindow?.minimize()
+    // })
+
+    // ipcMain.on('window-close', () => {
+    //   mainWindow?.close()
+    // })
+
+    mainWindow = createWindow('main')
+
+    // 创建托盘图标
+    const iconPath = path.join(icon) // 建议用 16x16 或 32x32 PNG
+    tray = new Tray(iconPath) // 设置托盘图标的菜单
+
+    function showWindow(): void {
+      if (!mainWindow || mainWindow.isDestroyed()) return
+      // 如果有缓存的窗口位置和大小，恢复
+      if (lastBounds) {
+        mainWindow.setBounds(lastBounds)
+      }
+      mainWindow.showInactive()
+      mainWindow.focus()
     }
-  ])
 
-  tray.setToolTip('kun-notes')
-  tray.setContextMenu(contextMenu)
+    function hideWindow(): void {
+      if (!mainWindow || mainWindow.isDestroyed()) return
+      // 缓存当前窗口位置和大小
+      lastBounds = mainWindow.getBounds()
+      // 移出屏幕模拟隐藏
+      mainWindow.setBounds({ x: 9999, y: 9999, width: 0, height: 0 })
+    }
 
-  // 左键点击托盘图标：切换显隐
-  tray.on('click', () => {
-    if (!mainWindow || mainWindow.isDestroyed()) return
-    const isHidden = mainWindow.getBounds().x === 9999 && mainWindow.getBounds().y === 9999
-    if (isHidden) {
-      showWindow()
-    } else {
-      hideWindow()
+    // 托盘菜单
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: '显示窗口',
+        click: () => showWindow()
+      },
+      {
+        label: '隐藏窗口',
+        click: () => hideWindow()
+      },
+      {
+        label: '退出',
+        click: () => app.quit()
+      }
+    ])
+
+    tray.setToolTip('kun-notes')
+    tray.setContextMenu(contextMenu)
+
+    // 左键点击托盘图标：切换显隐
+    tray.on('click', () => {
+      if (!mainWindow || mainWindow.isDestroyed()) return
+      const isHidden = mainWindow.getBounds().x === 9999 && mainWindow.getBounds().y === 9999
+      if (isHidden) {
+        showWindow()
+      } else {
+        hideWindow()
+      }
+    })
+
+    // app.on('activate', function () {
+    // On macOS it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    // if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    // })
+  })
+
+  // Quit when all windows are closed, except on macOS. There, it's common
+  // for applications and their menu bar to stay active until the user quits
+  // explicitly with Cmd + Q.
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit()
     }
   })
 
-  // app.on('activate', function () {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  // if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  // })
-})
+  // In this file you can include the rest of your app's specific main process
+  // code. You can also put them in separate files and require them here.
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
-
-app.on('before-quit', () => {
-  if (hideTimer) {
-    clearTimeout(hideTimer)
-    hideTimer = null
-  }
-})
+  app.on('before-quit', () => {
+    if (hideTimer) {
+      clearTimeout(hideTimer)
+      hideTimer = null
+    }
+  })
+} // end of single-instance else block

@@ -5,6 +5,7 @@
   "main": "./out/main/index.js",
   "author": "kun-notes.com",
   "homepage": "https://electron-vite.org",
+  "repository": "https://github.com/TJ-xiong/kun-note.git",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
