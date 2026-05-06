@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/TJ-xiong/kun-note/compare/v1.0.0...v1.1.0) (2026-05-06)
+
+
+### Features
+
+* 添加单实例锁并修复打包配置 ([5460694](https://github.com/TJ-xiong/kun-note/commit/5460694b9295bac5387c83b8280b54106b42cf41))
+
 # 1.0.0 (2026-05-06)
 
 
