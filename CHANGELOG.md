@@ -1,3 +1,19 @@
+# 1.0.0 (2026-05-06)
+
+
+### Features
+
+* 优化 MarkdownEditor 工具栏 ([c1cbd47](https://github.com/TJ-xiong/kun-note/commit/c1cbd47f86100b266b8847af54de7d802babac73))
+* 完善 CI/CD 自动构建与发布流程 ([d4e372d](https://github.com/TJ-xiong/kun-note/commit/d4e372d42171e85bc3e873b83467e380ac28fb73))
+* 添加数据库启动检查和自动迁移 ([9a109f3](https://github.com/TJ-xiong/kun-note/commit/9a109f3a0932bb5d1084f695dbfdac4f0a01936d))
+* 添加置顶功能、窗口收起延迟配置和排序优化 ([1bd6001](https://github.com/TJ-xiong/kun-note/commit/1bd60012cd9bfabfed956c0f8cf7b2773b4cd76b))
+* 重构认证系统和优化设置页面 ([ddaba66](https://github.com/TJ-xiong/kun-note/commit/ddaba661f90cc1953017a86ec0bac3864d9cf2a6))
+
+
+### Performance Improvements
+
+* 删除冗余功能 ([51f252d](https://github.com/TJ-xiong/kun-note/commit/51f252d606fd9e787d8527998291540aee432737))
+
 # [1.2.0](https://github.com/TJ-xiong/kun-note/compare/v1.1.1...v1.2.0) (2026-05-06)
 
 
