@@ -33,11 +33,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build Electron app
-        run: pnpm build:win
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Release
         run: npx semantic-release
         env:
