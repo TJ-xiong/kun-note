@@ -9,6 +9,7 @@ import { animateWindowY, isCursorInsideWindow, isCursorNearTopOfWindow } from '.
 import { Note } from '../types/note'
 import { v4 as uuidv4 } from 'uuid'
 import './ipc/auth'
+import { initSyncIPC, getSyncManager } from './ipc/sync'
 
 let isAnimating = false // 动画标志
 let isHidden = false // 窗口状态标志
@@ -75,7 +76,10 @@ function checkDatabaseSchema(): void {
         parentId TEXT,
         createdAt INTEGER,
         updatedAt INTEGER,
-        isPinned INTEGER DEFAULT 0
+        isPinned INTEGER DEFAULT 0,
+        version INTEGER DEFAULT 1,
+        deleted INTEGER DEFAULT 0,
+        syncedAt INTEGER DEFAULT 0
       )`
     ).run()
     console.log('[DB] Notes table created.')
@@ -89,7 +93,10 @@ function checkDatabaseSchema(): void {
 
   // 需要的字段列表
   const requiredColumns: { name: string; sql: string }[] = [
-    { name: 'isPinned', sql: 'isPinned INTEGER DEFAULT 0' }
+    { name: 'isPinned', sql: 'isPinned INTEGER DEFAULT 0' },
+    { name: 'version', sql: 'version INTEGER DEFAULT 1' },
+    { name: 'deleted', sql: 'deleted INTEGER DEFAULT 0' },
+    { name: 'syncedAt', sql: 'syncedAt INTEGER DEFAULT 0' }
   ]
 
   // 检查并添加缺失的字段
@@ -107,56 +114,70 @@ function checkDatabaseSchema(): void {
 checkDatabaseSchema()
 
 // 插入/更新笔记
-ipcMain.handle('save-note', (_event, { id, title, content, type, parentId, isPinned }): Note => {
-  const now = Date.now()
-  if (id) {
-    db.prepare(
-      `UPDATE notes SET title=?, content=?, updatedAt=?, type=?, parentId=?, isPinned=? WHERE id=?`
-    ).run(title, content, now, type, parentId, isPinned ? 1 : 0, id)
-    return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
-  } else {
-    const id = uuidv4() // 生成唯一id
-    db.prepare(
-      `INSERT INTO notes (id, title, content, createdAt, updatedAt, type, parentId, isPinned) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(id, title, content, now, now, type, parentId, isPinned ? 1 : 0)
-    return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
+ipcMain.handle(
+  'save-note',
+  (_event, { id, title, content, type, parentId, isPinned }): Note => {
+    const now = Date.now()
+    let note: Note
+    if (id) {
+      db.prepare(
+        `UPDATE notes SET title=?, content=?, updatedAt=?, type=?, parentId=?, isPinned=?, version=version+1 WHERE id=?`
+      ).run(title, content, now, type, parentId, isPinned ? 1 : 0, id)
+      note = db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
+    } else {
+      const id = uuidv4()
+      db.prepare(
+        `INSERT INTO notes (id, title, content, createdAt, updatedAt, type, parentId, isPinned, version, deleted, syncedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, 0)`
+      ).run(id, title, content, now, now, type, parentId, isPinned ? 1 : 0)
+      note = db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
+    }
+    // 触发同步（防抖 3 秒）
+    try {
+      getSyncManager()?.triggerOnSave()
+    } catch {
+      // sync manager 未初始化时忽略
+    }
+    return note
   }
-})
+)
 
 // 获取单个笔记
 ipcMain.handle('get-note', (_event, id): Note => {
   return db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
 })
 
-// 获取所有笔记（仅 id 和标题）
+// 获取所有笔记（仅 id 和标题，排除已删除）
 ipcMain.handle('list-notes', (): Note[] => {
   return db
-    .prepare(`SELECT id, title, updatedAt, type, parentId, isPinned FROM notes`)
+    .prepare(`SELECT id, title, updatedAt, type, parentId, isPinned FROM notes WHERE deleted=0`)
     .all() as Note[]
 })
 
-// 根据 parentId 获取笔记
+// 根据 parentId 获取笔记（排除已删除）
 ipcMain.handle('list-notes-by-parent', (_event, parentId: string): Note[] => {
   return db
-    .prepare(`SELECT id, title, updatedAt, type, parentId, isPinned FROM notes WHERE parentId=?`)
+    .prepare(
+      `SELECT id, title, updatedAt, type, parentId, isPinned FROM notes WHERE parentId=? AND deleted=0`
+    )
     .all(parentId) as Note[]
 })
 
-// 搜索笔记（模糊查询标题、内容、文件夹名）
+// 搜索笔记（模糊查询标题、内容、文件夹名，排除已删除）
 ipcMain.handle('search-notes', (_event, keyword: string): Note[] => {
   const pattern = `%${keyword}%`
   return db
     .prepare(
       `SELECT id, title, content, updatedAt, type, parentId FROM notes
-       WHERE title LIKE ? OR content LIKE ?
+       WHERE deleted=0 AND (title LIKE ? OR content LIKE ?)
        ORDER BY updatedAt DESC`
     )
     .all(pattern, pattern) as Note[]
 })
 
-// 删除笔记
+// 删除笔记（软删除）
 ipcMain.handle('delete-note', (_event, id): number => {
-  const result = db.prepare(`DELETE FROM notes WHERE id=?`).run(id)
+  const now = Date.now()
+  const result = db.prepare(`UPDATE notes SET deleted=1, updatedAt=? WHERE id=?`).run(now, id)
   return result.changes
 })
 
@@ -219,11 +240,19 @@ ipcMain.handle('get-image-data-url', (_event, rel: string): string => {
 })
 
 function createWindow(page: string = 'main'): BrowserWindow {
+  // 根据页面类型设置窗口尺寸
+  const windowSizes: Record<string, { width: number; height: number }> = {
+    main: { width: 520, height: 570 },
+    settings: { width: 520, height: 570 },
+    trash: { width: 400, height: 500 }
+  }
+  const size = windowSizes[page] || windowSizes.settings
+
   // Create the browser window.
   const window = new BrowserWindow({
     icon,
-    width: 520,
-    height: 570,
+    width: size.width,
+    height: size.height,
     center: true, // 居中显示
     minWidth: 360,
     minHeight: 100,
@@ -435,6 +464,14 @@ if (!gotTheLock) {
     // ipcMain.on('window-close', () => {
     //   mainWindow?.close()
     // })
+
+    // 初始化同步 IPC
+    initSyncIPC(db, () => Array.from(windows.values()))
+
+    // 启动自动同步：定时 60 秒 + 启动时同步一次
+    const sync = getSyncManager()
+    sync.startAutoSync(60_000)
+    sync.sync().catch((e) => console.error('[Sync] Initial sync failed:', e))
 
     mainWindow = createWindow('main')
 

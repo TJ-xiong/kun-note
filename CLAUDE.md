@@ -20,9 +20,12 @@ kun-notes 是一款基于 Electron 的桌面端笔记应用，支持 Markdown �
 - **HTTP 客户端**: axios
 
 ### 数据存储
-- **数据库**: better-sqlite3 (本地 SQLite)
+
+- **本地数据库**: better-sqlite3 (SQLite)
 - **存储位置**: `app.getPath('userData')/notes.db`
 - **图片存储**: `app.getPath('userData')/images/`
+- **同步服务端**: Flask + SQLAlchemy
+- **服务端数据库**: 开发环境 SQLite，生产环境 PostgreSQL
 
 ### 代码规范
 - **格式化**: Prettier
@@ -38,12 +41,14 @@ kun-notes/
 │   ├── main/                    # Electron 主进程
 │   │   ├── index.ts             # 主入口，窗口管理、IPC handlers、数据库初始化
 │   │   ├── ipc/
-│   │   │   └── auth.ts          # 认证相关 IPC (login/logout/getUser)
+│   │   │   ├── auth.ts          # 认证相关 IPC (login/logout/getUser)
+│   │   │   └── sync.ts          # 同步相关 IPC (sync/trash/history)
 │   │   └── utils/
 │   │       ├── animation.ts     # 窗口动画工具
 │   │       ├── auth-store.ts    # Token 存储
 │   │       ├── common.ts        # 通用工具
-│   │       └── request.ts       # HTTP 请求封装
+│   │       ├── request.ts       # HTTP 请求封装（含 notesService）
+│   │       └── sync-manager.ts  # 同步管理器
 │   ├── preload/                 # 预加载脚本（桥接主进程与渲染进程）
 │   │   ├── index.ts             # API 暴露到 window.api
 │   │   └── index.d.ts           # 类型声明
@@ -57,9 +62,12 @@ kun-notes/
 │   │       │   ├── Slider.tsx          # 侧边栏（简版）
 │   │       │   ├── SliderMenu.tsx      # 侧边栏（菜单版，含搜索）
 │   │       │   ├── TitleBar.tsx        # 自定义标题栏
-│   │       │   └── GlobalContextMenu.tsx # 全局右键菜单
+│   │       │   ├── GlobalContextMenu.tsx # 全局右键菜单
+│   │       │   ├── SyncStatus.tsx      # 同步状态指示器
+│   │       │   └── VersionHistory.tsx  # 版本历史弹窗
 │   │       ├── pages/
-│   │       │   └── Settings.tsx # 设置页面
+│   │       │   ├── Settings.tsx # 设置页面（含同步设置）
+│   │       │   └── Trash.tsx    # 回收站页面
 │   │       ├── hooks/
 │   │       │   └── useContextMenu.ts # 右键菜单 hook
 │   │       ├── state/           # Redux 状态
@@ -72,6 +80,22 @@ kun-notes/
 │       ├── note.ts              # Note 类型
 │       ├── auth.ts              # 认证类型
 │       └── http.ts              # HTTP 类型
+├── server/                      # Flask 同步服务端
+│   ├── app/
+│   │   ├── __init__.py          # Flask app 工厂函数
+│   │   ├── config.py            # 配置类（数据库 URI、密钥等）
+│   │   ├── extensions.py        # 扩展初始化（db, migrate）
+│   │   ├── models.py            # SQLAlchemy 数据模型
+│   │   ├── auth.py              # Token 校验装饰器
+│   │   ├── exceptions.py        # 自定义异常
+│   │   └── routes/
+│   │       ├── __init__.py      # 路由蓝图注册
+│   │       ├── sync.py          # 同步 API（POST /api/v1/sync）
+│   │       ├── trash.py         # 回收站 API
+│   │       └── history.py       # 版本历史 API
+│   ├── requirements.txt         # Python 依赖
+│   ├── run.py                   # 开发环境启动入口
+│   └── wsgi.py                  # 生产环境启动入口
 ├── resources/                   # 静态资源（图标等）
 ├── build/                       # 构建资源
 ├── electron-builder.yml         # 打包配置
@@ -150,6 +174,19 @@ kun-notes/
 | `auth-login` | Renderer → Main | 用户登录 |
 | `auth-logout` | Renderer → Main | 用户登出 |
 | `auth-get-user` | Renderer → Main | 获取当前用户信息 |
+
+### 同步
+| Channel | 方向 | 说明 |
+|---------|------|------|
+| `sync-start` | Renderer → Main | 手动触发同步 |
+| `sync-resolve` | Renderer → Main | 用户选择冲突解决方案 |
+| `sync-status` | Main → Renderer | 同步状态变更通知 |
+| `sync-conflict` | Main → Renderer | 冲突通知 |
+| `get-trash` | Renderer → Main | 获取回收站列表 |
+| `restore-note` | Renderer → Main | 恢复已删除笔记 |
+| `permanent-delete` | Renderer → Main | 永久删除笔记 |
+| `get-note-history` | Renderer → Main | 获取笔记版本历史 |
+| `rollback-note` | Renderer → Main | 回滚到指定版本 |
 
 ---
 

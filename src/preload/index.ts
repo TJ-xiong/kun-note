@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { Note } from '../types/note'
 import { LoginResponse, UserInfo } from '../types/auth'
+import { SyncResponse, SyncConflict, SyncStatusEvent, TrashNote, NoteHistoryEntry } from '../types/sync'
 
 // Custom APIs for renderer
 interface AppSettings {
@@ -32,7 +33,35 @@ const api = {
   authLogin: (username: string, password: string): Promise<LoginResponse> =>
     ipcRenderer.invoke('auth-login', username, password),
   authLogout: (): Promise<void> => ipcRenderer.invoke('auth-logout'),
-  authGetUser: (): Promise<UserInfo> => ipcRenderer.invoke('auth-get-user')
+  authGetUser: (): Promise<UserInfo> => ipcRenderer.invoke('auth-get-user'),
+  // 同步相关
+  syncStart: (): Promise<SyncResponse | null> => ipcRenderer.invoke('sync-start'),
+  syncResolve: (noteId: string, resolution: 'use-mine' | 'use-server'): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('sync-resolve', noteId, resolution),
+  syncGetStatus: (): Promise<{ status: string; conflicts: SyncConflict[] }> =>
+    ipcRenderer.invoke('sync-status'),
+  onSyncStatus: (callback: (event: SyncStatusEvent) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: SyncStatusEvent): void => callback(data)
+    ipcRenderer.on('sync-status', handler)
+    return () => ipcRenderer.removeListener('sync-status', handler)
+  },
+  onSyncConflict: (callback: (conflicts: SyncConflict[]) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: SyncConflict[]): void => callback(data)
+    ipcRenderer.on('sync-conflict', handler)
+    return () => ipcRenderer.removeListener('sync-conflict', handler)
+  },
+  // 回收站
+  getTrash: (): Promise<{ notes: TrashNote[]; total: number }> =>
+    ipcRenderer.invoke('get-trash'),
+  restoreNote: (noteId: string): Promise<{ note: Note }> =>
+    ipcRenderer.invoke('restore-note', noteId),
+  permanentDelete: (noteId: string): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('permanent-delete', noteId),
+  // 版本历史
+  getNoteHistory: (noteId: string): Promise<{ versions: NoteHistoryEntry[] }> =>
+    ipcRenderer.invoke('get-note-history', noteId),
+  rollbackNote: (noteId: string, version: number): Promise<{ note: Note }> =>
+    ipcRenderer.invoke('rollback-note', noteId, version)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

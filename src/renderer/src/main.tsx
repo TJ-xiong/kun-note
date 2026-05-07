@@ -6,6 +6,7 @@ import { Provider } from 'react-redux'
 import { store } from '@renderer/state'
 import App from './App'
 import Settings from './pages/Settings'
+import Trash from './pages/Trash'
 import GlobalContextMenu from '@renderer/components/GlobalContextMenu'
 
 // Check process arguments to determine which page to render
@@ -20,11 +21,22 @@ const getPageFromArgs = (): string => {
 
 const page = getPageFromArgs()
 
+const renderPage = (): React.ReactElement => {
+  switch (page) {
+    case 'main':
+      return <App />
+    case 'trash':
+      return <Trash />
+    default:
+      return <Settings />
+  }
+}
+
 createRoot(document.getElementById('root')!).render(
   <Provider store={store}>
     <StrictMode>
-      <GlobalContextMenu /> {/* 全局只挂一次 */}
-      {page === 'main' ? <App /> : <Settings />}
+      <GlobalContextMenu />
+      {renderPage()}
     </StrictMode>
   </Provider>
 )

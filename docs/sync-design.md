@@ -16,10 +16,10 @@
 | 组件 | 技术 | 说明 |
 |------|------|------|
 | 服务端框架 | Flask (Python) | 轻量灵活 |
-| 数据库 | PostgreSQL（待确认） | 支持 JSONB、并发写入好 |
+| 数据库 | PostgreSQL | 支持 JSONB、并发写入好 |
 | ORM | SQLAlchemy + Flask-Migrate | 模型定义 + 迁移管理 |
 | 认证 | Bearer Token（对接 user.mtjx.top） | 客户端已有登录流程 |
-| 部署域名 | notes.mtjx.top（待确认） | 与用户中心同域体系 |
+| 部署域名 | 开发环境本地测试，生产环境待定 | 与用户中心同域体系 |
 
 ---
 
@@ -70,7 +70,9 @@ kun-note/
 │   │   ├── exceptions.py       # 自定义异常
 │   │   └── routes/
 │   │       ├── __init__.py
-│   │       └── sync.py         # 同步 API 蓝图
+│   │       ├── sync.py         # 同步 API 蓝图
+│   │       ├── trash.py        # 回收站 API 蓝图
+│   │       └── history.py      # 版本历史 API 蓝图
 │   ├── migrations/             # Flask-Migrate 生成的迁移文件
 │   ├── requirements.txt
 │   ├── wsgi.py                 # 生产环境启动入口（Gunicorn）
@@ -100,9 +102,11 @@ src/
 │   └── index.d.ts              # 改动：新增同步相关类型声明
 ├── renderer/src/
 │   ├── components/
-│   │   └── SyncStatus.tsx      # 新增：同步状态指示器
+│   │   ├── SyncStatus.tsx      # 新增：同步状态指示器
+│   │   └── VersionHistory.tsx  # 新增：版本历史弹窗
 │   └── pages/
-│       └── Settings.tsx        # 改动：同步设置项
+│       ├── Settings.tsx        # 改动：同步设置项
+│       └── Trash.tsx           # 新增：回收站页面
 └── types/
     ├── note.ts                 # 改动：新增 version, deleted, syncedAt
     └── sync.ts                 # 新增：同步相关类型定义
@@ -138,7 +142,7 @@ CREATE INDEX idx_notes_user_id ON notes (user_id);
 CREATE UNIQUE INDEX idx_notes_user_note ON notes (user_id, id);
 ```
 
-#### sync_history 表（可选，用于审计与回滚）
+#### sync_history 表（用于审计与版本回滚）
 
 ```sql
 CREATE TABLE sync_history (
@@ -152,6 +156,8 @@ CREATE TABLE sync_history (
 
 CREATE INDEX idx_sync_history_note ON sync_history (note_id, version);
 ```
+
+> 每次同步成功后，将变更的笔记快照写入 sync_history，用于版本回滚和历史查看。
 
 ### 4.2 客户端本地数据库（SQLite）
 
@@ -410,6 +416,11 @@ export async function notesRequest<T>(config: HttpRequestConfig): Promise<ApiRes
 | `sync-status` | Main → Renderer | 同步状态变更通知（IDLE/SYNCING/SUCCESS/ERROR） |
 | `sync-conflict` | Main → Renderer | 冲突通知，携带两个版本，等待用户选择 |
 | `sync-resolve` | Renderer → Main | 用户选择冲突解决方案（use-mine / use-server） |
+| `get-trash` | Renderer → Main | 获取回收站列表 |
+| `restore-note` | Renderer → Main | 恢复已删除笔记 |
+| `permanent-delete` | Renderer → Main | 永久删除笔记 |
+| `get-note-history` | Renderer → Main | 获取笔记版本历史 |
+| `rollback-note` | Renderer → Main | 回滚到指定版本 |
 
 ### 7.4 数据库迁移
 
@@ -430,14 +441,24 @@ const syncColumns = [
 
 ### 8.1 Token 校验方式
 
-客户端已有 `user.mtjx.top` 颁发的 Bearer Token。服务端校验有两种方案：
+客户端已有 `user.mtjx.top` 颁发的 Bearer Token（HS256 JWT，有效期 30 分钟）。
 
-| 方案 | 原理 | 优点 | 缺点 |
-|------|------|------|------|
-| **JWT 本地校验** | 服务端用同一 secret 解码验证签名 | 快，无网络依赖 | 需要共享 secret |
-| **远程校验** | 调用 `user.mtjx.top/api/v1/users/me` 验证 | 无需共享密钥 | 每次请求多一次 HTTP |
+**方案**：远程校验 + 缓存。服务端调用 `user.mtjx.top/api/v1/users/me` 验证 Token 并获取用户信息，使用 Redis 缓存用户信息（5 分钟），避免每次请求都调用用户中心。
 
-**建议**：优先使用 JWT 本地校验。如果用户中心不是 JWT 格式，退化为远程校验 + 服务端缓存（Redis 缓存用户信息 5 分钟）。
+```python
+import requests
+
+USER_CENTER_URL = "https://user.mtjx.top/api/v1"
+
+def verify_token(access_token: str) -> dict:
+    """调用用户中心验证 token 并获取用户信息"""
+    resp = requests.get(f"{USER_CENTER_URL}/users/me", headers={
+        "Authorization": f"Bearer {access_token}"
+    })
+    if resp.status_code != 200:
+        raise UnauthorizedError("Token expired or invalid")
+    return resp.json()  # {"id": 1, "username": "admin", ...}
+```
 
 ### 8.2 用户隔离
 
@@ -451,12 +472,88 @@ const syncColumns = [
 |------|------|------|
 | `POST` | `/api/v1/sync` | 核心同步接口（推送 + 拉取） |
 | `GET` | `/api/v1/health` | 健康检查 |
-
-仅一个业务接口，保持极简。
+| `GET` | `/api/v1/notes/:id/history` | 获取笔记版本历史 |
+| `POST` | `/api/v1/notes/:id/rollback` | 回滚到指定版本 |
+| `GET` | `/api/v1/trash` | 获取回收站列表 |
+| `POST` | `/api/v1/trash/:id/restore` | 恢复已删除笔记 |
+| `DELETE` | `/api/v1/trash/:id` | 永久删除笔记 |
 
 ---
 
-## 10. 边界情况与处理
+## 10. 回收站功能
+
+### 10.1 概述
+
+已软删除的笔记进入回收站，用户可以查看、恢复或永久删除。
+
+### 10.2 客户端改动
+
+- 侧边栏新增"回收站"入口
+- 新增回收站页面，展示已删除笔记列表
+- 支持恢复单条笔记（取消 `deleted` 标记）
+- 支持永久删除（物理删除记录及关联图片）
+- 批量清空回收站
+
+### 10.3 服务端接口
+
+**`GET /api/v1/trash`** — 获取回收站列表
+
+```text
+请求头: Authorization: Bearer <token>
+响应: { notes: [...], total: number }
+```
+
+**`POST /api/v1/trash/:id/restore`** — 恢复笔记
+
+```text
+请求头: Authorization: Bearer <token>
+响应: { note: Note }
+```
+
+**`DELETE /api/v1/trash/:id`** — 永久删除
+
+```text
+请求头: Authorization: Bearer <token>
+响应: { success: true }
+```
+
+---
+
+## 11. 版本历史与回滚
+
+### 11.1 概述
+
+每次同步成功后，将笔记快照写入 `sync_history` 表。用户可以查看历史版本并回滚。
+
+### 11.2 客户端改动
+
+- 笔记编辑页新增"历史版本"按钮
+- 弹窗展示版本列表（版本号、修改时间）
+- 支持预览历史版本内容
+- 支持回滚到指定版本（覆盖当前内容）
+
+### 11.3 服务端接口
+
+**`GET /api/v1/notes/:id/history`** — 获取版本历史
+
+```text
+请求头: Authorization: Bearer <token>
+响应: { versions: [{ version, syncedAt, snapshot }] }
+```
+
+**`POST /api/v1/notes/:id/rollback`** — 回滚到指定版本
+
+```text
+请求头: Authorization: Bearer <token>
+请求体: { version: number }
+响应: { note: Note }
+```
+
+回滚操作本身会产生新版本（version +1），而不是覆盖历史。
+
+---
+
+## 12. 边界情况与处理
 
 | 场景 | 处理方式 |
 |------|----------|
@@ -471,10 +568,10 @@ const syncColumns = [
 
 ---
 
-## 11. 待确认事项
+## 13. 待确认事项
 
-- [ ] 数据库选型：PostgreSQL 还是 MySQL？
-- [ ] 用户中心 Token 格式：是否为 JWT？
-- [ ] 部署域名：`notes.mtjx.top`？
-- [ ] 是否需要同步历史记录/版本回滚功能？
-- [ ] 是否需要回收站（查看已删除笔记）？
+- [x] 数据库选型：PostgreSQL
+- [x] 用户中心 Token 格式：JWT
+- [ ] 部署域名：开发环境本地测试，生产环境待定
+- [x] 同步历史记录/版本回滚功能：需要
+- [x] 回收站功能：需要

@@ -23,6 +23,19 @@ export interface Api {
   authLogin: (username: string, password: string) => Promise<any>
   authLogout: () => Promise<void>
   authGetUser: () => Promise<any>
+  // 同步相关
+  syncStart: () => Promise<any>
+  syncResolve: (noteId: string, resolution: 'use-mine' | 'use-server') => Promise<{ success: boolean }>
+  syncGetStatus: () => Promise<{ status: string; conflicts: any[] }>
+  onSyncStatus: (callback: (event: any) => void) => () => void
+  onSyncConflict: (callback: (conflicts: any[]) => void) => () => void
+  // 回收站
+  getTrash: () => Promise<{ notes: any[]; total: number }>
+  restoreNote: (noteId: string) => Promise<{ note: any }>
+  permanentDelete: (noteId: string) => Promise<{ success: boolean }>
+  // 版本历史
+  getNoteHistory: (noteId: string) => Promise<{ versions: any[] }>
+  rollbackNote: (noteId: string, version: number) => Promise<{ note: any }>
 }
 
 declare global {

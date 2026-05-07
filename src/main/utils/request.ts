@@ -79,12 +79,77 @@ userService.interceptors.response.use(
   }
 )
 
-// ========== 笔记同步服务（预留） ==========
-// const notesService: AxiosInstance = axios.create({
-//   baseURL: 'https://notes.mtjx.top',
-//   timeout: 10_000
-// })
-// TODO: 添加笔记服务的拦截器
+// ========== 笔记同步服务 ==========
+const NOTES_BASE_URL = import.meta.env.VITE_NOTES_API_URL || 'http://localhost:5000'
+
+const notesService: AxiosInstance = axios.create({
+  baseURL: NOTES_BASE_URL,
+  timeout: 15_000
+})
+
+notesService.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  const token = getAccessToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  const fullUrl = config.url?.startsWith('http') ? config.url : `${config.baseURL}${config.url}`
+  console.log(`[Notes HTTP] ${config.method?.toUpperCase()} ${fullUrl}`)
+  return config
+})
+
+notesService.interceptors.response.use(
+  (response: AxiosResponse) => {
+    const fullUrl = response.config.url?.startsWith('http')
+      ? response.config.url
+      : `${response.config.baseURL}${response.config.url}`
+    console.log(
+      `[Notes HTTP] ${response.status} ${response.config.method?.toUpperCase()} ${fullUrl}`
+    )
+    return response
+  },
+  async (error) => {
+    const originalRequest = error.config
+    const status = error.response?.status
+    const errorUrl = originalRequest?.url?.startsWith('http')
+      ? originalRequest.url
+      : `${originalRequest?.baseURL}${originalRequest?.url}`
+    console.warn(
+      `[Notes HTTP] Request failed: ${status ?? 'no response'} ${originalRequest?.method?.toUpperCase()} ${errorUrl}`
+    )
+    if (status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+      const refreshToken = getRefreshToken()
+      if (refreshToken) {
+        console.log('[Notes HTTP] Trying to refresh token...')
+        try {
+          const resp = await axios.post(
+            `${USER_API_URL}/refresh`,
+            { refresh_token: refreshToken },
+            { headers: { 'Content-Type': 'application/json' } }
+          )
+          const { access_token, refresh_token } = resp.data
+          setTokens(access_token, refresh_token)
+          console.log('[Notes HTTP] Token refreshed successfully')
+          originalRequest.headers.Authorization = `Bearer ${access_token}`
+          return notesService.request(originalRequest)
+        } catch (refreshError) {
+          console.error('[Notes HTTP] Token refresh failed, clearing local token')
+          clearTokens()
+        }
+      } else {
+        console.warn('[Notes HTTP] No refresh_token, skipping refresh')
+      }
+    }
+    const message =
+      error?.response?.data?.message ??
+      error?.response?.data?.msg ??
+      error?.response?.data?.detail ??
+      error.message ??
+      'Network error'
+    console.error(`[Notes HTTP] Error: ${message}`)
+    return Promise.reject(new Error(message))
+  }
+)
 
 // ========== 通用请求方法 ==========
 export async function request<T = unknown>(config: HttpRequestConfig): Promise<ApiResponse<T> | T> {
@@ -92,9 +157,11 @@ export async function request<T = unknown>(config: HttpRequestConfig): Promise<A
   return response.data
 }
 
-export { USER_API_URL }
+export { USER_API_URL, NOTES_BASE_URL }
 
-// export async function notesRequest<T = unknown>(config: HttpRequestConfig): Promise<ApiResponse<T> | T> {
-//   const response = await notesService.request<ApiResponse<T>>(config)
-//   return response.data
-// }
+export async function notesRequest<T = unknown>(
+  config: HttpRequestConfig
+): Promise<ApiResponse<T> | T> {
+  const response = await notesService.request<ApiResponse<T>>(config)
+  return response.data
+}

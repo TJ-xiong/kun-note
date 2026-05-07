@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import { GetProps, Input } from 'antd'
 import { Note, NoteType } from 'src/types/note'
-import { FileMarkdownOutlined, FolderOpenOutlined, LeftOutlined } from '@ant-design/icons'
+import { FileMarkdownOutlined, FolderOpenOutlined, LeftOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useContextMenu } from '@renderer/hooks/useContextMenu'
 
 interface SliderMenuProps {
@@ -319,6 +319,28 @@ const App: React.FC<SliderMenuProps> = ({
             </div>
           )
         })}
+        {/* 回收站入口 */}
+        {!isSearching && currParentId === 'root' && (
+          <div
+            onClick={() => window.api.openOrCloseWindow('trash')}
+            style={{
+              width: '80%',
+              margin: '8px auto 0',
+              padding: '6px 0',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'start',
+              cursor: 'pointer',
+              gap: '8px',
+              color: '#8c8c8c',
+              borderTop: '1px solid #f0f0f0'
+            }}
+          >
+            <DeleteOutlined />
+            <div>回收站</div>
+          </div>
+        )}
       </div>
     </div>
   )
