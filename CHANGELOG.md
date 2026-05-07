@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/TJ-xiong/kun-note/compare/v1.1.0...v1.1.1) (2026-05-07)
+
+
+### Bug Fixes
+
+* 修复 CI/CD 打包时版本号未同步的问题 ([7b87ae9](https://github.com/TJ-xiong/kun-note/commit/7b87ae9022f8a41e0ad91f9755a0ae3ad678d379))
+
 # [1.1.0](https://github.com/TJ-xiong/kun-note/compare/v1.0.0...v1.1.0) (2026-05-06)
 
 
