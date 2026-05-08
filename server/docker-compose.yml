@@ -1,13 +1,22 @@
 services:
   backend:
-    image: ghcr.io/tangjx/kun-note-server:latest
+    image: ghcr.io/tj-xiong/kun-note-server:latest
     container_name: kun-note-server
     restart: unless-stopped
     env_file:
       - server/.env
     expose:
       - "8000"
+    environment:
+      - VIRTUAL_HOST=kun-note.mtjx.top
+      - VIRTUAL_PORT=8000
+      - LETSENCRYPT_HOST=kun-note.mtjx.top
+      - LETSENCRYPT_EMAIL=admin@mtjx.top
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     networks:
       - webproxy
+
+networks:
+  webproxy:
+    external: true
