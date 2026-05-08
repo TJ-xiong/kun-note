@@ -1,3 +1,22 @@
+# [1.2.0](https://github.com/TJ-xiong/kun-note/compare/v1.1.1...v1.2.0) (2026-05-08)
+
+
+### Bug Fixes
+
+* 修复 Docker 构建缓存不兼容的问题 ([a687f49](https://github.com/TJ-xiong/kun-note/commit/a687f49ac8e3b700caa6222904cb5c82a658289c))
+* 修复 pnpm CI 构建配置 ([6018145](https://github.com/TJ-xiong/kun-note/commit/6018145a6cee87bfbb5b8ae58321826100e36cca))
+* 修复多个请求同时 401 时重复刷新 token 的问题 ([9212f45](https://github.com/TJ-xiong/kun-note/commit/9212f458a96e5ea3a685331c03dbf4cfb1f86eff))
+* 修复笔记重命名内容丢失 ([f5673d7](https://github.com/TJ-xiong/kun-note/commit/f5673d7a13edccf2f46cc0e6018cb339179040fa))
+* 更新 docker-compose 配置 ([e8c403c](https://github.com/TJ-xiong/kun-note/commit/e8c403c18856ec1b1fef4a84a6453d464baee8aa))
+* 添加 cryptography 依赖解决 MySQL 认证问题 ([abba907](https://github.com/TJ-xiong/kun-note/commit/abba9073c2f534c8cd2c471b6c2a17601e7e3436))
+* 添加数据库连接池配置解决连接丢失问题 ([ed83aef](https://github.com/TJ-xiong/kun-note/commit/ed83aeff9d77f27b070d45e0983eef5c69979769))
+
+
+### Features
+
+* 实现笔记同步功能 ([fb20ca1](https://github.com/TJ-xiong/kun-note/commit/fb20ca1298423d421fdaf1fbe0e5fc0c537f090b))
+* 添加 Docker 构建配置和 GitHub Actions 工作流 ([7b01145](https://github.com/TJ-xiong/kun-note/commit/7b011456592bf185e4fe90a7f8ed1cd672363fcb))
+
 ## [1.1.1](https://github.com/TJ-xiong/kun-note/compare/v1.1.0...v1.1.1) (2026-05-07)
 
 
