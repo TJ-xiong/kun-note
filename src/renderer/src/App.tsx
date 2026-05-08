@@ -19,6 +19,7 @@ function App(): React.JSX.Element {
   const [currParentId, setCurrParentId] = useState<string>('root') // 当前选中的目录id
   const saveTimer = useRef<NodeJS.Timeout | null>(null) // 保存防抖定时器
   const [sliderMenuShow, setSliderMenuShow] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0) // 用于触发 SliderMenu 刷新
 
   // 异步加载笔记
   const loadList = async (): Promise<void> => {
@@ -54,6 +55,7 @@ function App(): React.JSX.Element {
     console.log(savedNote)
     setNotes((prev) => [savedNote, ...prev])
     setCurrentNote(savedNote)
+    setRefreshKey((prev) => prev + 1) // 触发 SliderMenu 刷新
   }
 
   // 切换笔记
@@ -71,11 +73,11 @@ function App(): React.JSX.Element {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(() => {
       window.api.saveNote({
-        id: updatedNote.id, // 新笔记传 null，更新时传已有 id
+        id: updatedNote.id,
         title: updatedNote.title,
         content: updatedNote.content,
-        type: 'note',
-        parentId: 'root'
+        type: updatedNote.type,
+        parentId: updatedNote.parentId
       })
       console.log('笔记已保存:', updatedNote)
     }, 500) // 500ms 防抖，可根据需求调整
@@ -104,6 +106,7 @@ function App(): React.JSX.Element {
               currentNote={currentNote}
               handleChangeNote={(id: string) => handleChangeNote(id)}
               handleAddNote={handleAddNote}
+              refreshKey={refreshKey}
             />
           ) : (
             <Slider

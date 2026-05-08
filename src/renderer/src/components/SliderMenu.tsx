@@ -12,6 +12,7 @@ interface SliderMenuProps {
   loadList: () => Promise<void>
   loadNotesByParent: (parentId: string) => Promise<Note[]>
   handleAddNote: (type: NoteType, parentId: string, title?: string) => Promise<void>
+  refreshKey?: number
 }
 
 const App: React.FC<SliderMenuProps> = ({
@@ -21,7 +22,8 @@ const App: React.FC<SliderMenuProps> = ({
   handleChangeNote,
   currParentId,
   setCurrParentId,
-  handleAddNote
+  handleAddNote,
+  refreshKey
 }) => {
   const { Search } = Input
   type SearchProps = GetProps<typeof Input.Search>
@@ -64,10 +66,10 @@ const App: React.FC<SliderMenuProps> = ({
     [loadNotesByParent, setCurrParentId]
   )
 
-  // 初始化和目录切换时加载数据
+  // 初始化、目录切换或刷新时加载数据
   useEffect(() => {
     handleParentChange(currParentId)
-  }, [])
+  }, [refreshKey])
 
   const onSearch: SearchProps['onSearch'] = async (value) => {
     setSearchKeyword(value)
@@ -174,6 +176,10 @@ const App: React.FC<SliderMenuProps> = ({
     window.api.saveNote(note).then(() => {
       loadList() // 刷新父组件数据
       handleParentChange(currParentId)
+      // 同步更新 currentNote，避免后续编辑内容时标题被覆盖
+      if (note.id && currentNote?.id === note.id) {
+        handleChangeNote(note.id)
+      }
     })
   }
 

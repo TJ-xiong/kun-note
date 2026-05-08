@@ -120,9 +120,20 @@ ipcMain.handle(
     const now = Date.now()
     let note: Note
     if (id) {
+      const existing = db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note | undefined
+      if (!existing) throw new Error('Note not found')
+
       db.prepare(
         `UPDATE notes SET title=?, content=?, updatedAt=?, type=?, parentId=?, isPinned=?, version=version+1 WHERE id=?`
-      ).run(title, content, now, type, parentId, isPinned ? 1 : 0, id)
+      ).run(
+        title ?? existing.title,
+        content ?? existing.content,
+        now,
+        type ?? existing.type,
+        parentId ?? existing.parentId,
+        (isPinned ?? existing.isPinned) ? 1 : 0,
+        id
+      )
       note = db.prepare(`SELECT * FROM notes WHERE id=?`).get(id) as Note
     } else {
       const id = uuidv4()

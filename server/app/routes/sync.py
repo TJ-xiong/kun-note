@@ -94,13 +94,20 @@ def _apply_change(note_id: str, user_id: int, change: dict):
         )
         db.session.add(note)
     else:
-        existing.title = change.get('title') or ''
-        existing.content = change.get('content') or ''
-        existing.type = change.get('type') or 'note'
-        existing.parent_id = change.get('parentId')
-        existing.is_pinned = change.get('isPinned') or False
-        existing.version = change.get('version') or 1
-        existing.deleted = change.get('deleted') or False
+        if 'title' in change:
+            existing.title = change.get('title') or ''
+        if 'content' in change:
+            existing.content = change.get('content') or ''
+        if 'type' in change:
+            existing.type = change.get('type') or 'note'
+        if 'parentId' in change:
+            existing.parent_id = change.get('parentId')
+        if 'isPinned' in change:
+            existing.is_pinned = change.get('isPinned') or False
+        if 'version' in change:
+            existing.version = change.get('version') or 1
+        if 'deleted' in change:
+            existing.deleted = change.get('deleted') or False
         existing.updated_at = now
 
     db.session.commit()
