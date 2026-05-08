@@ -1,0 +1,13 @@
+services:
+  backend:
+    image: ghcr.io/tangjx/kun-note-server:latest
+    container_name: kun-note-server
+    restart: unless-stopped
+    env_file:
+      - server/.env
+    expose:
+      - "8000"
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    networks:
+      - webproxy
