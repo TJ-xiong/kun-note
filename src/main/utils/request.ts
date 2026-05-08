@@ -1,4 +1,8 @@
-import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import axios, {
+  AxiosInstance,
+  AxiosResponse,
+  InternalAxiosRequestConfig
+} from 'axios'
 import { HttpRequestConfig } from '../../types/http'
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './auth-store'
 
@@ -6,6 +10,60 @@ export interface ApiResponse<T = unknown> {
   code: number
   message: string
   data: T
+}
+
+// Token 刷新状态管理
+let isRefreshing = false
+let refreshSubscribers: Array<(token: string) => void> = []
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb)
+}
+
+function onTokenRefreshed(token: string) {
+  refreshSubscribers.forEach((cb) => cb(token))
+  refreshSubscribers = []
+}
+
+async function handleTokenRefresh(
+  originalRequest: InternalAxiosRequestConfig & { _retry?: boolean },
+  axiosInstance: AxiosInstance
+): Promise<AxiosResponse> {
+  if (!isRefreshing) {
+    isRefreshing = true
+    const refreshToken = getRefreshToken()
+    if (!refreshToken) {
+      isRefreshing = false
+      throw new Error('No refresh token available')
+    }
+    try {
+      const resp = await axios.post(
+        `${USER_API_URL}/refresh`,
+        { refresh_token: refreshToken },
+        { headers: { 'Content-Type': 'application/json' } }
+      )
+      const { access_token, refresh_token } = resp.data
+      setTokens(access_token, refresh_token)
+      console.log('[HTTP] Token refreshed successfully')
+      onTokenRefreshed(access_token)
+      originalRequest.headers.Authorization = `Bearer ${access_token}`
+      return axiosInstance.request(originalRequest)
+    } catch (refreshError) {
+      console.error('[HTTP] Token refresh failed, clearing local token')
+      clearTokens()
+      refreshSubscribers = []
+      throw refreshError
+    } finally {
+      isRefreshing = false
+    }
+  }
+
+  return new Promise<AxiosResponse>((resolve) => {
+    subscribeTokenRefresh((token: string) => {
+      originalRequest.headers.Authorization = `Bearer ${token}`
+      resolve(axiosInstance.request(originalRequest))
+    })
+  })
 }
 
 // ========== 用户认证服务 ==========
@@ -46,27 +104,8 @@ userService.interceptors.response.use(
     )
     if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
-      const refreshToken = getRefreshToken()
-      if (refreshToken) {
-        console.log('[HTTP] Trying to refresh token...')
-        try {
-          const resp = await axios.post(
-            `${USER_API_URL}/refresh`,
-            { refresh_token: refreshToken },
-            { headers: { 'Content-Type': 'application/json' } }
-          )
-          const { access_token, refresh_token } = resp.data
-          setTokens(access_token, refresh_token)
-          console.log('[HTTP] Token refreshed successfully')
-          originalRequest.headers.Authorization = `Bearer ${access_token}`
-          return userService.request(originalRequest)
-        } catch (refreshError) {
-          console.error('[HTTP] Token refresh failed, clearing local token')
-          clearTokens()
-        }
-      } else {
-        console.warn('[HTTP] No refresh_token, skipping refresh')
-      }
+      console.log('[HTTP] Trying to refresh token...')
+      return handleTokenRefresh(originalRequest, userService)
     }
     const message =
       error?.response?.data?.message ??
@@ -118,27 +157,8 @@ notesService.interceptors.response.use(
     )
     if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
-      const refreshToken = getRefreshToken()
-      if (refreshToken) {
-        console.log('[Notes HTTP] Trying to refresh token...')
-        try {
-          const resp = await axios.post(
-            `${USER_API_URL}/refresh`,
-            { refresh_token: refreshToken },
-            { headers: { 'Content-Type': 'application/json' } }
-          )
-          const { access_token, refresh_token } = resp.data
-          setTokens(access_token, refresh_token)
-          console.log('[Notes HTTP] Token refreshed successfully')
-          originalRequest.headers.Authorization = `Bearer ${access_token}`
-          return notesService.request(originalRequest)
-        } catch (refreshError) {
-          console.error('[Notes HTTP] Token refresh failed, clearing local token')
-          clearTokens()
-        }
-      } else {
-        console.warn('[Notes HTTP] No refresh_token, skipping refresh')
-      }
+      console.log('[Notes HTTP] Trying to refresh token...')
+      return handleTokenRefresh(originalRequest, notesService)
     }
     const message =
       error?.response?.data?.message ??
