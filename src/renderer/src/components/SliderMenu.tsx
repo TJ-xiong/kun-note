@@ -12,6 +12,7 @@ interface SliderMenuProps {
   loadList: () => Promise<void>
   loadNotesByParent: (parentId: string) => Promise<Note[]>
   handleAddNote: (type: NoteType, parentId: string, title?: string) => Promise<void>
+  onShowHistory: (noteId: string) => void
   refreshKey?: number
 }
 
@@ -23,6 +24,7 @@ const App: React.FC<SliderMenuProps> = ({
   currParentId,
   setCurrParentId,
   handleAddNote,
+  onShowHistory,
   refreshKey
 }) => {
   const { Search } = Input
@@ -210,6 +212,19 @@ const App: React.FC<SliderMenuProps> = ({
           label: note.isPinned ? '取消置顶' : '置顶',
           onClick: () => handleTogglePin(note)
         },
+        ...(note.type === 'note'
+          ? [
+              {
+                divider: true,
+                label: '',
+                onClick: () => {}
+              },
+              {
+                label: '版本历史',
+                onClick: () => onShowHistory(note.id!)
+              }
+            ]
+          : []),
         {
           divider: true,
           label: '',
@@ -225,7 +240,7 @@ const App: React.FC<SliderMenuProps> = ({
         }
       ])
     },
-    [bind, handleTogglePin]
+    [bind, handleTogglePin, onShowHistory]
   )
 
   const handleBlackMenu = useCallback(

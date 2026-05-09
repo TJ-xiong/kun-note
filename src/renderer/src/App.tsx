@@ -4,6 +4,7 @@ import { NewOrUpdateNote, Note, NoteType } from '../../types/note'
 import MarkdownEditor from './components/MarkdownEditor'
 import SliderMenu from './components/SliderMenu'
 import Slider from './components/Slider'
+import VersionHistory from './components/VersionHistory'
 import { DateUtils } from '@renderer/utils/DateUtils'
 
 window.addEventListener('mousemove', (event: MouseEvent) => {
@@ -20,6 +21,8 @@ function App(): React.JSX.Element {
   const saveTimer = useRef<NodeJS.Timeout | null>(null) // 保存防抖定时器
   const [sliderMenuShow, setSliderMenuShow] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0) // 用于触发 SliderMenu 刷新
+  const [versionHistoryVisible, setVersionHistoryVisible] = useState(false)
+  const [versionHistoryNoteId, setVersionHistoryNoteId] = useState<string | null>(null)
 
   // 异步加载笔记
   const loadList = async (): Promise<void> => {
@@ -64,6 +67,19 @@ function App(): React.JSX.Element {
     setCurrentNote(note)
   }
 
+  // 打开版本历史
+  const handleShowHistory = (noteId: string): void => {
+    setVersionHistoryNoteId(noteId)
+    setVersionHistoryVisible(true)
+  }
+
+  // 版本回滚后刷新编辑器和列表
+  const handleRollback = (note: Note): void => {
+    setCurrentNote(note)
+    loadList()
+    setRefreshKey((prev) => prev + 1)
+  }
+
   // 编辑笔记内容
   const handleContentChange = (newValue: string): void => {
     if (!currentNote) return
@@ -106,6 +122,7 @@ function App(): React.JSX.Element {
               currentNote={currentNote}
               handleChangeNote={(id: string) => handleChangeNote(id)}
               handleAddNote={handleAddNote}
+              onShowHistory={handleShowHistory}
               refreshKey={refreshKey}
             />
           ) : (
@@ -133,6 +150,14 @@ function App(): React.JSX.Element {
           </div>
         </div>
       </div>
+      {versionHistoryNoteId && (
+        <VersionHistory
+          noteId={versionHistoryNoteId}
+          visible={versionHistoryVisible}
+          onClose={() => setVersionHistoryVisible(false)}
+          onRollback={handleRollback}
+        />
+      )}
     </>
   )
 }
