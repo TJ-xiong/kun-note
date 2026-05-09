@@ -340,29 +340,30 @@ const App: React.FC<SliderMenuProps> = ({
             </div>
           )
         })}
-        {/* 回收站入口 */}
-        {!isSearching && currParentId === 'root' && (
-          <div
-            onClick={() => window.api.openOrCloseWindow('trash')}
-            style={{
-              width: '80%',
-              margin: '8px auto 0',
-              padding: '6px 0',
-              fontSize: '13px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'start',
-              cursor: 'pointer',
-              gap: '8px',
-              color: '#8c8c8c',
-              borderTop: '1px solid #f0f0f0'
-            }}
-          >
-            <DeleteOutlined />
-            <div>回收站</div>
-          </div>
-        )}
       </div>
+      {/* 回收站入口 */}
+      {!isSearching && currParentId === 'root' && (
+        <div
+          onClick={() => window.api.openOrCloseWindow('trash')}
+          style={{
+            width: '80%',
+            margin: '0 auto',
+            padding: '8px 0',
+            fontSize: '13px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'start',
+            cursor: 'pointer',
+            gap: '8px',
+            color: '#8c8c8c',
+            borderTop: '1px solid #e0e0e0',
+            flexShrink: 0
+          }}
+        >
+          <DeleteOutlined />
+          <div>回收站</div>
+        </div>
+      )}
     </div>
   )
 }
