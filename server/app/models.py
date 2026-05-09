@@ -47,6 +47,28 @@ class Note(db.Model):
         }
 
 
+class NoteImage(db.Model):
+    __tablename__ = 'note_images'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, nullable=False, index=True)
+    filename = db.Column(db.String(255), nullable=False)
+    size = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'filename', name='uq_user_image'),
+        db.Index('idx_note_images_user', 'user_id', 'filename'),
+    )
+
+    def to_dict(self):
+        return {
+            'filename': self.filename,
+            'size': self.size,
+            'createdAt': int(self.created_at.timestamp() * 1000) if self.created_at else 0,
+        }
+
+
 class SyncHistory(db.Model):
     __tablename__ = 'sync_history'
 

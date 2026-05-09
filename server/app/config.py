@@ -18,7 +18,8 @@ class Config:
         'pool_recycle': 3600,
     }
     USER_CENTER_URL = os.environ.get('USER_CENTER_URL', 'https://user.mtjx.top/api/v1')
-    MAX_CONTENT_LENGTH = 1 * 1024 * 1024
+    MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB，支持图片上传
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'uploads')
 
 
 class DevelopmentConfig(Config):

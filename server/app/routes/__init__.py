@@ -8,4 +8,4 @@ def health():
     return jsonify({'status': 'ok'})
 
 
-from . import sync, trash, history  # noqa: E402, F401
+from . import sync, trash, history, images  # noqa: E402, F401

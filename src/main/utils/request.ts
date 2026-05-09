@@ -185,3 +185,31 @@ export async function notesRequest<T = unknown>(
   const response = await notesService.request<ApiResponse<T>>(config)
   return response.data
 }
+
+// 文件上传方法（multipart/form-data）
+export async function notesUpload<T = unknown>(
+  url: string,
+  formData: FormData,
+  onProgress?: (percent: number) => void
+): Promise<T> {
+  const response = await notesService.request<T>({
+    url,
+    method: 'POST',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: onProgress
+      ? (progressEvent: { loaded: number; total?: number }) => {
+          if (progressEvent.total) {
+            onProgress(Math.round((progressEvent.loaded / progressEvent.total) * 100))
+          }
+        }
+      : undefined
+  })
+  return response as T
+}
+
+// 文件下载方法（返回 Buffer）
+export async function notesDownload(url: string): Promise<Buffer> {
+  const response = await notesService.get(url, { responseType: 'arraybuffer' })
+  return Buffer.from(response.data)
+}

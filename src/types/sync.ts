@@ -53,3 +53,10 @@ export interface NoteHistoryEntry {
   syncedAt: number
   snapshot: Note
 }
+
+// 服务端图片信息
+export interface ServerImage {
+  filename: string
+  size: number
+  createdAt: number
+}

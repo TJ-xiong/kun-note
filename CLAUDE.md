@@ -26,6 +26,7 @@ kun-notes 是一款基于 Electron 的桌面端笔记应用，支持 Markdown �
 - **图片存储**: `app.getPath('userData')/images/`
 - **同步服务端**: Flask + SQLAlchemy
 - **服务端数据库**: 开发环境 SQLite，生产环境 PostgreSQL
+- **服务端图片存储**: `uploads/images/{user_id}/`（按用户隔离）
 
 ### 代码规范
 - **格式化**: Prettier
@@ -47,8 +48,8 @@ kun-notes/
 │   │       ├── animation.ts     # 窗口动画工具
 │   │       ├── auth-store.ts    # Token 存储
 │   │       ├── common.ts        # 通用工具
-│   │       ├── request.ts       # HTTP 请求封装（含 notesService）
-│   │       └── sync-manager.ts  # 同步管理器
+│   │       ├── request.ts       # HTTP 请求封装（含 notesService、notesUpload、notesDownload）
+│   │       └── sync-manager.ts  # 同步管理器（含图片同步）
 │   ├── preload/                 # 预加载脚本（桥接主进程与渲染进程）
 │   │   ├── index.ts             # API 暴露到 window.api
 │   │   └── index.d.ts           # 类型声明
@@ -91,6 +92,7 @@ kun-notes/
 │   │   └── routes/
 │   │       ├── __init__.py      # 路由蓝图注册
 │   │       ├── sync.py          # 同步 API（POST /api/v1/sync）
+│   │       ├── images.py        # 图片 API（上传/下载/列表）
 │   │       ├── trash.py         # 回收站 API
 │   │       └── history.py       # 版本历史 API
 │   ├── requirements.txt         # Python 依赖
@@ -117,7 +119,8 @@ kun-notes/
 ### 图片处理
 - 支持剪贴板图片粘贴
 - 图片保存到本地 `images/` 目录
-- 使用相对路径引用，支持数据迁移
+- 使用相对路径 `./images/filename` 引用，支持数据迁移
+- 图片同步：同步时自动上传本地新图片、下载服务端缺失图片
 
 ### 窗口特性
 - 无边框透明窗口，自定义标题栏
@@ -135,8 +138,11 @@ kun-notes/
 ### HTTP 请求架构
 
 - **用户认证服务**: `https://user.mtjx.top`（已实现）
-- **笔记同步服务**: 预留接口（待实现）
+- **笔记同步服务**: Flask 后端（含笔记同步、图片同步、回收站、版本历史）
 - 请求封装在 `src/main/utils/request.ts`，使用独立 axios 实例
+- `notesRequest`: 通用 JSON 请求
+- `notesUpload`: multipart/form-data 文件上传
+- `notesDownload`: 二进制文件下载（返回 Buffer）
 
 ---
 
