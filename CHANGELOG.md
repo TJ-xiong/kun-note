@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/TJ-xiong/kun-note/compare/v1.2.0...v1.3.0) (2026-05-09)
+
+
+### Bug Fixes
+
+* 回收站入口固定在侧边栏底部 ([9d9f082](https://github.com/TJ-xiong/kun-note/commit/9d9f08229af44252766abe69c59411d725a2cc53))
+
+
+### Features
+
+* 接入版本历史功能到右键菜单 ([4a8b0f2](https://github.com/TJ-xiong/kun-note/commit/4a8b0f26a6ff28390b3e68934e0680336198999e))
+
 # [1.2.0](https://github.com/TJ-xiong/kun-note/compare/v1.1.1...v1.2.0) (2026-05-08)
 
 
