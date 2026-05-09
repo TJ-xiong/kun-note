@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/TJ-xiong/kun-note/compare/v1.3.0...v1.4.0) (2026-05-09)
+
+
+### Features
+
+* 实现笔记图片同步功能 ([b451403](https://github.com/TJ-xiong/kun-note/commit/b451403d3d7fc8d259d2c92b42ef62df4b68e725))
+
 # [1.3.0](https://github.com/TJ-xiong/kun-note/compare/v1.2.0...v1.3.0) (2026-05-09)
 
 
