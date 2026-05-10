@@ -1,3 +1,15 @@
+# [1.5.0](https://github.com/TJ-xiong/kun-note/compare/v1.4.0...v1.5.0) (2026-05-10)
+
+
+### Bug Fixes
+
+* 修复图片上传目录路径解析错误 ([bae06a9](https://github.com/TJ-xiong/kun-note/commit/bae06a9138cf6d2f7b1c281623b0b44c68363da2))
+
+
+### Features
+
+* 实现应用版本显示与自动更新检查功能 ([ac34e3e](https://github.com/TJ-xiong/kun-note/commit/ac34e3ea18bb29b92c3f7bf75c08f2df5471160f))
+
 # [1.4.0](https://github.com/TJ-xiong/kun-note/compare/v1.3.0...v1.4.0) (2026-05-09)
 
 
