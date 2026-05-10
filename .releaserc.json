@@ -21,7 +21,8 @@
       "@semantic-release/github",
       {
         "assets": [
-          { "path": "dist/*.exe", "label": "Windows Installer" }
+          { "path": "dist/*.exe", "label": "Windows Installer" },
+          { "path": "dist/latest.yml", "label": "Update Manifest" }
         ]
       }
     ]

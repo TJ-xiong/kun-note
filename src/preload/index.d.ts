@@ -1,7 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload'
 import { NewOrUpdateNote, Note } from '../types/note'
 import { LoginResponse, UserInfo } from '../types/auth'
-import { SyncResponse, SyncConflict, SyncStatusEvent, TrashNote, NoteHistoryEntry } from '../types/sync'
+import { SyncResponse, SyncConflict, SyncStatusEvent, TrashNote, NoteHistoryEntry, UpdateStatusEvent, UpdateProgress, UpdateInfo } from '../types/sync'
 
 interface AppSettings {
   autoHideOnMouseLeave: boolean
@@ -39,6 +39,13 @@ type Api = {
   // 版本历史
   getNoteHistory: (noteId: string) => Promise<{ versions: NoteHistoryEntry[] }>
   rollbackNote: (noteId: string, version: number) => Promise<{ note: Note }>
+  // 更新
+  getAppVersion: () => Promise<string>
+  checkForUpdates: () => Promise<UpdateInfo | null>
+  downloadUpdate: () => Promise<void>
+  installUpdate: () => Promise<void>
+  onUpdateStatus: (callback: (event: UpdateStatusEvent) => void) => () => void
+  onUpdateProgress: (callback: (progress: UpdateProgress) => void) => () => void
 }
 
 declare global {

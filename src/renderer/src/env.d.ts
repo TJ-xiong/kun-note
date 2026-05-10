@@ -36,6 +36,13 @@ export interface Api {
   // 版本历史
   getNoteHistory: (noteId: string) => Promise<{ versions: any[] }>
   rollbackNote: (noteId: string, version: number) => Promise<{ note: any }>
+  // 更新
+  getAppVersion: () => Promise<string>
+  checkForUpdates: () => Promise<any>
+  downloadUpdate: () => Promise<void>
+  installUpdate: () => Promise<void>
+  onUpdateStatus: (callback: (event: any) => void) => () => void
+  onUpdateProgress: (callback: (progress: any) => void) => () => void
 }
 
 declare global {

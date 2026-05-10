@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import type { UserInfo } from '../../../types/auth'
+import type { UpdateStatusEvent, UpdateProgress, UpdateInfo } from '../../../types/sync'
 import './Settings.css'
 
 interface AppSettings {
@@ -18,6 +19,12 @@ const Settings: React.FC = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // 版本与更新
+  const [version, setVersion] = useState('')
+  const [updateStatus, setUpdateStatus] = useState<string>('idle')
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
+  const [updateError, setUpdateError] = useState('')
+  const [downloadProgress, setDownloadProgress] = useState<UpdateProgress | null>(null)
 
   useEffect(() => {
     window.api.getSettings().then((s: AppSettings) => {
@@ -27,6 +34,22 @@ const Settings: React.FC = () => {
       .authGetUser()
       .then(setUser)
       .catch(() => {})
+    // 获取版本号
+    window.api.getAppVersion().then(setVersion)
+    // 监听更新状态
+    const unsubStatus = window.api.onUpdateStatus((event: UpdateStatusEvent) => {
+      setUpdateStatus(event.status)
+      if (event.info) setUpdateInfo(event.info)
+      if (event.error) setUpdateError(event.error)
+      if (event.status !== 'downloading') setDownloadProgress(null)
+    })
+    const unsubProgress = window.api.onUpdateProgress((progress: UpdateProgress) => {
+      setDownloadProgress(progress)
+    })
+    return () => {
+      unsubStatus()
+      unsubProgress()
+    }
   }, [])
 
   const handleAutoHideChange = (checked: boolean) => {
@@ -68,6 +91,31 @@ const Settings: React.FC = () => {
     } finally {
       setUser(null)
     }
+  }
+
+  const handleCheckUpdate = async (): Promise<void> => {
+    setUpdateError('')
+    setUpdateStatus('checking')
+    try {
+      await window.api.checkForUpdates()
+    } catch (e) {
+      setUpdateStatus('error')
+      setUpdateError(e instanceof Error ? e.message : '检查更新失败')
+    }
+  }
+
+  const handleDownloadUpdate = async (): Promise<void> => {
+    setUpdateStatus('downloading')
+    try {
+      await window.api.downloadUpdate()
+    } catch (e) {
+      setUpdateStatus('error')
+      setUpdateError(e instanceof Error ? e.message : '下载更新失败')
+    }
+  }
+
+  const handleInstallUpdate = (): void => {
+    window.api.installUpdate()
   }
 
   return (
@@ -320,6 +368,126 @@ const Settings: React.FC = () => {
                   </button>
                 </div>
               </div>
+            )}
+          </div>
+        </div>
+
+        {/* 关于 */}
+        <div className="settings-section">
+          <div className="settings-section-header">
+            <div className="settings-section-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M12 8V12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                <circle cx="12" cy="15.5" r="0.75" fill="currentColor" />
+              </svg>
+            </div>
+            <h2>关于</h2>
+          </div>
+
+          <div className="settings-card">
+            {/* 版本信息 */}
+            <div className="settings-item">
+              <div className="settings-item-info">
+                <div className="settings-item-label">当前版本</div>
+                <div className="settings-item-desc">
+                  kun-notes v{version}
+                  {updateStatus === 'not-available' && (
+                    <span className="settings-update-latest"> · 已是最新版本</span>
+                  )}
+                </div>
+              </div>
+              {updateStatus === 'available' && updateInfo ? (
+                <button className="settings-download-btn" onClick={handleDownloadUpdate}>
+                  下载更新
+                </button>
+              ) : updateStatus === 'downloading' ? (
+                <span className="settings-update-status-text">下载中...</span>
+              ) : updateStatus === 'downloaded' ? (
+                <button className="settings-install-btn" onClick={handleInstallUpdate}>
+                  立即更新
+                </button>
+              ) : (
+                <button
+                  className="settings-login-btn"
+                  onClick={handleCheckUpdate}
+                  disabled={updateStatus === 'checking'}
+                >
+                  {updateStatus === 'checking' ? '检查中...' : '检查更新'}
+                </button>
+              )}
+            </div>
+
+            {/* 更新状态详情 */}
+            {updateStatus === 'available' && updateInfo && (
+              <>
+                <div className="settings-divider"></div>
+                <div className="settings-item">
+                  <div className="settings-item-info">
+                    <div className="settings-item-label settings-update-available">
+                      发现新版本 v{updateInfo.version}
+                    </div>
+                    {updateInfo.releaseDate && (
+                      <div className="settings-item-desc">
+                        发布时间：{new Date(updateInfo.releaseDate).toLocaleDateString('zh-CN')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 下载进度 */}
+            {updateStatus === 'downloading' && downloadProgress && (
+              <>
+                <div className="settings-divider"></div>
+                <div className="settings-download-progress">
+                  <div className="settings-progress-bar">
+                    <div
+                      className="settings-progress-fill"
+                      style={{ width: `${downloadProgress.percent.toFixed(0)}%` }}
+                    ></div>
+                  </div>
+                  <div className="settings-progress-text">
+                    {downloadProgress.percent.toFixed(0)}%
+                    <span className="settings-progress-speed">
+                      {(downloadProgress.bytesPerSecond / 1024 / 1024).toFixed(1)} MB/s
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* 错误信息 */}
+            {updateStatus === 'error' && updateError && (
+              <>
+                <div className="settings-divider"></div>
+                <div className="settings-item">
+                  <div className="settings-item-info">
+                    <div className="settings-item-desc settings-update-error">
+                      {updateError}
+                    </div>
+                  </div>
+                  <button className="settings-login-btn" onClick={handleCheckUpdate}>
+                    重试
+                  </button>
+                </div>
+              </>
+            )}
+
+
+            {/* 下载完成提示 */}
+            {updateStatus === 'downloaded' && (
+              <>
+                <div className="settings-divider"></div>
+                <div className="settings-item">
+                  <div className="settings-item-info">
+                    <div className="settings-item-desc settings-update-downloaded">
+                      新版本已下载完成，点击「立即更新」重启应用
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

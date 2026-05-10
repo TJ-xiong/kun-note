@@ -60,3 +60,29 @@ export interface ServerImage {
   size: number
   createdAt: number
 }
+
+// 更新状态
+export type UpdateStatus = 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+
+// 更新信息
+export interface UpdateInfo {
+  version: string
+  releaseDate: string
+  releaseName?: string
+  releaseNotes?: string
+}
+
+// 更新状态事件
+export interface UpdateStatusEvent {
+  status: UpdateStatus
+  info?: UpdateInfo
+  error?: string
+}
+
+// 下载进度
+export interface UpdateProgress {
+  percent: number
+  bytesPerSecond: number
+  total: number
+  transferred: number
+}

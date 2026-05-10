@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { Note } from '../types/note'
 import { LoginResponse, UserInfo } from '../types/auth'
-import { SyncResponse, SyncConflict, SyncStatusEvent, TrashNote, NoteHistoryEntry } from '../types/sync'
+import { SyncResponse, SyncConflict, SyncStatusEvent, TrashNote, NoteHistoryEntry, UpdateStatusEvent, UpdateProgress, UpdateInfo } from '../types/sync'
 
 // Custom APIs for renderer
 interface AppSettings {
@@ -61,7 +61,22 @@ const api = {
   getNoteHistory: (noteId: string): Promise<{ versions: NoteHistoryEntry[] }> =>
     ipcRenderer.invoke('get-note-history', noteId),
   rollbackNote: (noteId: string, version: number): Promise<{ note: Note }> =>
-    ipcRenderer.invoke('rollback-note', noteId, version)
+    ipcRenderer.invoke('rollback-note', noteId, version),
+  // 更新相关
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke('get-app-version'),
+  checkForUpdates: (): Promise<UpdateInfo | null> => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: (): Promise<void> => ipcRenderer.invoke('download-update'),
+  installUpdate: (): Promise<void> => ipcRenderer.invoke('install-update'),
+  onUpdateStatus: (callback: (event: UpdateStatusEvent) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: UpdateStatusEvent): void => callback(data)
+    ipcRenderer.on('update-status', handler)
+    return () => ipcRenderer.removeListener('update-status', handler)
+  },
+  onUpdateProgress: (callback: (progress: UpdateProgress) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: UpdateProgress): void => callback(data)
+    ipcRenderer.on('update-progress', handler)
+    return () => ipcRenderer.removeListener('update-progress', handler)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

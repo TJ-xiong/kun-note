@@ -43,7 +43,8 @@ kun-notes/
 │   │   ├── index.ts             # 主入口，窗口管理、IPC handlers、数据库初始化
 │   │   ├── ipc/
 │   │   │   ├── auth.ts          # 认证相关 IPC (login/logout/getUser)
-│   │   │   └── sync.ts          # 同步相关 IPC (sync/trash/history)
+│   │   │   ├── sync.ts          # 同步相关 IPC (sync/trash/history)
+│   │   │   └── updater.ts       # 更新相关 IPC (version/check/download/install)
 │   │   └── utils/
 │   │       ├── animation.ts     # 窗口动画工具
 │   │       ├── auth-store.ts    # Token 存储
@@ -193,6 +194,17 @@ kun-notes/
 | `permanent-delete` | Renderer → Main | 永久删除笔记 |
 | `get-note-history` | Renderer → Main | 获取笔记版本历史 |
 | `rollback-note` | Renderer → Main | 回滚到指定版本 |
+
+### 应用更新
+
+| Channel | 方向 | 说明 |
+| ------- | ---- | ---- |
+| `get-app-version` | Renderer → Main | 获取当前应用版本号 |
+| `check-for-updates` | Renderer → Main | 检查是否有新版本 |
+| `download-update` | Renderer → Main | 下载更新包 |
+| `install-update` | Renderer → Main | 安装更新并重启 |
+| `update-status` | Main → Renderer | 更新状态变更通知 |
+| `update-progress` | Main → Renderer | 下载进度通知 |
 
 ---
 

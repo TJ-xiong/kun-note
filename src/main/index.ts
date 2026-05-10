@@ -10,6 +10,7 @@ import { Note } from '../types/note'
 import { v4 as uuidv4 } from 'uuid'
 import './ipc/auth'
 import { initSyncIPC, getSyncManager } from './ipc/sync'
+import { initUpdaterIPC, scheduleAutoCheck } from './ipc/updater'
 
 let isAnimating = false // 动画标志
 let isHidden = false // 窗口状态标志
@@ -254,7 +255,7 @@ function createWindow(page: string = 'main'): BrowserWindow {
   // 根据页面类型设置窗口尺寸
   const windowSizes: Record<string, { width: number; height: number }> = {
     main: { width: 520, height: 570 },
-    settings: { width: 520, height: 570 },
+    settings: { width: 520, height: 620 },
     trash: { width: 400, height: 500 }
   }
   const size = windowSizes[page] || windowSizes.settings
@@ -478,6 +479,10 @@ if (!gotTheLock) {
 
     // 初始化同步 IPC
     initSyncIPC(db, () => Array.from(windows.values()))
+
+    // 初始化更新 IPC
+    initUpdaterIPC()
+    scheduleAutoCheck(5000)
 
     // 启动自动同步：定时 60 秒 + 启动时同步一次
     const sync = getSyncManager()
