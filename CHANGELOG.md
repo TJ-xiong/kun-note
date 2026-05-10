@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/TJ-xiong/kun-note/compare/v1.5.0...v1.6.0) (2026-05-10)
+
+
+### Features
+
+* 实现客户端和服务端日志持久化 ([4219e53](https://github.com/TJ-xiong/kun-note/commit/4219e53b022862623b1d7180e2c225a31e4b03a1))
+
 # [1.5.0](https://github.com/TJ-xiong/kun-note/compare/v1.4.0...v1.5.0) (2026-05-10)
 
 
