@@ -5,6 +5,7 @@ import icon from '../../resources/icon.png?asset'
 import Database from 'better-sqlite3'
 import path from 'path'
 import fs from 'fs'
+import log from './utils/logger'
 import { animateWindowY, isCursorInsideWindow, isCursorNearTopOfWindow } from './utils/animation'
 import { Note } from '../types/note'
 import { v4 as uuidv4 } from 'uuid'
@@ -39,7 +40,7 @@ function loadSettings(): void {
       appSettings = { ...defaultSettings, ...JSON.parse(data) }
     }
   } catch (e) {
-    console.error('Failed to load settings:', e)
+    log.error('[Settings] Failed to load settings:', e)
   }
 }
 
@@ -47,13 +48,13 @@ function saveSettings(): void {
   try {
     fs.writeFileSync(settingsPath, JSON.stringify(appSettings, null, 2))
   } catch (e) {
-    console.error('Failed to save settings:', e)
+    log.error('[Settings] Failed to save settings:', e)
   }
 }
 
 // 数据库路径（放在用户数据目录）
 const dbPath = path.join(app.getPath('userData'), 'notes.db')
-console.log(dbPath)
+log.info('[DB] Database path:', dbPath)
 // 确保目录存在
 fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 // 初始化数据库
@@ -67,7 +68,7 @@ function checkDatabaseSchema(): void {
     .get()
   if (!tableExists) {
     // 表不存在，创建新表
-    console.log('[DB] Creating notes table...')
+    log.info('[DB] Creating notes table...')
     db.prepare(
       ` CREATE TABLE IF NOT EXISTS notes (
         id TEXT PRIMARY KEY,
@@ -83,12 +84,12 @@ function checkDatabaseSchema(): void {
         syncedAt INTEGER DEFAULT 0
       )`
     ).run()
-    console.log('[DB] Notes table created.')
+    log.info('[DB] Notes table created.')
     return
   }
 
   // 表存在，检查字段
-  console.log('[DB] Checking notes table schema...')
+  log.info('[DB] Checking notes table schema...')
   const columns = db.prepare(`PRAGMA table_info(notes)`).all() as { name: string }[]
   const columnNames = columns.map((col) => col.name)
 
@@ -103,12 +104,12 @@ function checkDatabaseSchema(): void {
   // 检查并添加缺失的字段
   for (const col of requiredColumns) {
     if (!columnNames.includes(col.name)) {
-      console.log(`[DB] Adding missing column: ${col.name}`)
+      log.info(`[DB] Adding missing column: ${col.name}`)
       db.prepare(`ALTER TABLE notes ADD COLUMN ${col.sql}`).run()
-      console.log(`[DB] Column ${col.name} added.`)
+      log.info(`[DB] Column ${col.name} added.`)
     }
   }
-  console.log('[DB] Database schema check complete.')
+  log.info('[DB] Database schema check complete.')
 }
 
 // 初始化时检查数据库结构
@@ -445,7 +446,7 @@ if (!gotTheLock) {
 
     // IPC test
     ipcMain.on('ping', (_event: Electron.IpcMainEvent, title: string) => {
-      console.log('pong', title)
+      log.debug('pong', title)
     })
 
     // 设置相关 IPC handlers
@@ -487,7 +488,7 @@ if (!gotTheLock) {
     // 启动自动同步：定时 60 秒 + 启动时同步一次
     const sync = getSyncManager()
     sync.startAutoSync(60_000)
-    sync.sync().catch((e) => console.error('[Sync] Initial sync failed:', e))
+    sync.sync().catch((e) => log.error('[Sync] Initial sync failed:', e))
 
     mainWindow = createWindow('main')
 

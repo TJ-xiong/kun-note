@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from flask import jsonify, g
+from flask import jsonify, g, current_app
 from . import api_bp
 from ..auth import require_token
 from ..extensions import db
@@ -31,6 +31,7 @@ def restore_note(note_id: str):
     note.deleted = False
     note.updated_at = datetime.now(timezone.utc)
     db.session.commit()
+    current_app.logger.info('[Trash] 用户 %s 恢复笔记: %s', user_id, note_id)
     return jsonify({'note': note.to_dict()})
 
 
@@ -44,4 +45,5 @@ def permanent_delete(note_id: str):
 
     db.session.delete(note)
     db.session.commit()
+    current_app.logger.info('[Trash] 用户 %s 永久删除笔记: %s', user_id, note_id)
     return jsonify({'success': True})

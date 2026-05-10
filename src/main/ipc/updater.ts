@@ -1,12 +1,13 @@
 import { app, ipcMain, BrowserWindow } from 'electron'
 import { autoUpdater, UpdateInfo } from 'electron-updater'
+import log from '../utils/logger'
 
 // 配置日志
 autoUpdater.logger = {
-  info: (message: string) => console.log('[Updater]', message),
-  warn: (message: string) => console.warn('[Updater]', message),
-  error: (message: string) => console.error('[Updater]', message),
-  debug: (message: string) => console.debug('[Updater]', message),
+  info: (message: string) => log.info('[Updater]', message),
+  warn: (message: string) => log.warn('[Updater]', message),
+  error: (message: string) => log.error('[Updater]', message),
+  debug: (message: string) => log.debug('[Updater]', message),
   transports: [] as never[]
 } as unknown as typeof autoUpdater.logger
 
@@ -33,7 +34,7 @@ function initUpdaterIPC(): void {
   // 检查更新
   ipcMain.handle('check-for-updates', async () => {
     if (!app.isPackaged) {
-      console.log('[Updater] Skip check: app is not packed')
+      log.info('[Updater] Skip check: app is not packed')
       broadcast('update-status', { status: 'not-available' })
       return null
     }
@@ -51,7 +52,7 @@ function initUpdaterIPC(): void {
       }
       return null
     } catch (e) {
-      console.error('[Updater] Check for updates failed:', e)
+      log.error('[Updater] Check for updates failed:', e)
       throw e
     }
   })
@@ -62,7 +63,7 @@ function initUpdaterIPC(): void {
     try {
       await autoUpdater.downloadUpdate()
     } catch (e) {
-      console.error('[Updater] Download update failed:', e)
+      log.error('[Updater] Download update failed:', e)
       throw e
     }
   })
@@ -76,12 +77,12 @@ function initUpdaterIPC(): void {
   // --- autoUpdater 事件监听 ---
 
   autoUpdater.on('checking-for-update', () => {
-    console.log('[Updater] Checking for update...')
+    log.info('[Updater] Checking for update...')
     broadcast('update-status', { status: 'checking' })
   })
 
   autoUpdater.on('update-available', (info) => {
-    console.log('[Updater] Update available:', info.version)
+    log.info('[Updater] Update available:', info.version)
     broadcast('update-status', {
       status: 'available',
       info: {
@@ -94,7 +95,7 @@ function initUpdaterIPC(): void {
   })
 
   autoUpdater.on('update-not-available', (info) => {
-    console.log('[Updater] Update not available. Current:', info.version)
+    log.info('[Updater] Update not available. Current:', info.version)
     broadcast('update-status', { status: 'not-available' })
   })
 
@@ -108,7 +109,7 @@ function initUpdaterIPC(): void {
   })
 
   autoUpdater.on('update-downloaded', (info) => {
-    console.log('[Updater] Update downloaded:', info.version)
+    log.info('[Updater] Update downloaded:', info.version)
     broadcast('update-status', {
       status: 'downloaded',
       info: {
@@ -121,7 +122,7 @@ function initUpdaterIPC(): void {
   })
 
   autoUpdater.on('error', (err) => {
-    console.error('[Updater] Error:', err.message)
+    log.error('[Updater] Error:', err.message)
     broadcast('update-status', { status: 'error', error: err.message })
   })
 }
@@ -129,12 +130,12 @@ function initUpdaterIPC(): void {
 // 启动自动检查（延迟执行，仅打包后生效）
 function scheduleAutoCheck(delayMs: number = 5000): void {
   if (!app.isPackaged) {
-    console.log('[Updater] Skip auto check: app is not packed')
+    log.info('[Updater] Skip auto check: app is not packed')
     return
   }
   setTimeout(() => {
     autoUpdater.checkForUpdates().catch((e) => {
-      console.error('[Updater] Auto check failed:', e)
+      log.error('[Updater] Auto check failed:', e)
     })
   }, delayMs)
 }

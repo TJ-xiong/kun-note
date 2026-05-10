@@ -16,6 +16,7 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
     volumes:
       - ./server/uploads:/app/uploads
+      - ./server/logs:/app/logs
     networks:
       - webproxy
 

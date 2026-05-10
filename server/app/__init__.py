@@ -5,6 +5,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from .extensions import db, migrate
 from .exceptions import register_error_handlers
+from .logger import setup_logger
 
 # 加载 server/.env
 load_dotenv(Path(__file__).resolve().parent.parent / '.env')
@@ -20,6 +21,9 @@ def create_app():
     else:
         from .config import DevelopmentConfig
         app.config.from_object(DevelopmentConfig)
+
+    # 初始化日志
+    setup_logger(app)
 
     CORS(app)
 

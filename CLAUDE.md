@@ -49,6 +49,7 @@ kun-notes/
 │   │       ├── animation.ts     # 窗口动画工具
 │   │       ├── auth-store.ts    # Token 存储
 │   │       ├── common.ts        # 通用工具
+│   │       ├── logger.ts        # 日志模块（electron-log 封装）
 │   │       ├── request.ts       # HTTP 请求封装（含 notesService、notesUpload、notesDownload）
 │   │       └── sync-manager.ts  # 同步管理器（含图片同步）
 │   ├── preload/                 # 预加载脚本（桥接主进程与渲染进程）
@@ -90,6 +91,7 @@ kun-notes/
 │   │   ├── models.py            # SQLAlchemy 数据模型
 │   │   ├── auth.py              # Token 校验装饰器
 │   │   ├── exceptions.py        # 自定义异常
+│   │   ├── logger.py            # 日志模块（按天轮转，保留 7 天）
 │   │   └── routes/
 │   │       ├── __init__.py      # 路由蓝图注册
 │   │       ├── sync.py          # 同步 API（POST /api/v1/sync）

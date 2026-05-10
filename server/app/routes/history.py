@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from flask import request, jsonify, g
+from flask import request, jsonify, g, current_app
 from . import api_bp
 from ..auth import require_token
 from ..extensions import db
@@ -63,4 +63,5 @@ def rollback_note(note_id: str):
     db.session.add(new_history)
     db.session.commit()
 
+    current_app.logger.info('[History] 用户 %s 回滚笔记 %s 到版本 %d', user_id, note_id, target_version)
     return jsonify({'note': note.to_dict()})

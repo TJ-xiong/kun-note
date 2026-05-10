@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from flask import request, jsonify, g
+from flask import request, jsonify, g, current_app
 from . import api_bp
 from ..auth import require_token
 from ..extensions import db
@@ -16,6 +16,7 @@ def sync_notes():
     last_sync_time = data.get('lastSyncTime', 0)
     changes = data.get('changes', [])
     user_id = g.user['id']
+    current_app.logger.info('[Sync] 用户 %s 同步请求，变更数: %d', user_id, len(changes))
 
     # 将毫秒时间戳转为 datetime
     if last_sync_time:
@@ -65,6 +66,11 @@ def sync_notes():
     ]
 
     sync_time = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+    current_app.logger.info(
+        '[Sync] 用户 %s 同步完成，已同步: %d，冲突: %d，服务端变更: %d',
+        user_id, len(synced), len(conflicts), len(server_changes)
+    )
 
     return jsonify({
         'synced': synced,

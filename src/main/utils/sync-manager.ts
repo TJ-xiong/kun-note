@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import path from 'path'
 import fs from 'fs'
 import Database from 'better-sqlite3'
+import log from './logger'
 import { notesRequest, notesUpload, notesDownload } from './request'
 import { getAccessToken } from './auth-store'
 import { Note } from '../../types/note'
@@ -20,7 +21,7 @@ function loadSyncState(): SyncState {
       return JSON.parse(fs.readFileSync(STATE_FILE, 'utf-8'))
     }
   } catch (e) {
-    console.error('[Sync] Failed to load sync state:', e)
+    log.error('[Sync] Failed to load sync state:', e)
   }
   return { lastSyncTime: 0 }
 }
@@ -29,7 +30,7 @@ function saveSyncState(state: SyncState): void {
   try {
     fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2))
   } catch (e) {
-    console.error('[Sync] Failed to save sync state:', e)
+    log.error('[Sync] Failed to save sync state:', e)
   }
 }
 
@@ -63,9 +64,9 @@ class SyncManager {
       clearInterval(this.syncTimer)
     }
     this.syncTimer = setInterval(() => {
-      this.sync().catch((e) => console.error('[Sync] Auto sync failed:', e))
+      this.sync().catch((e) => log.error('[Sync] Auto sync failed:', e))
     }, intervalMs)
-    console.log(`[Sync] Auto sync started, interval: ${intervalMs}ms`)
+    log.info(`[Sync] Auto sync started, interval: ${intervalMs}ms`)
   }
 
   // 停止定时同步
@@ -82,19 +83,19 @@ class SyncManager {
       clearTimeout(this.debounceTimer)
     }
     this.debounceTimer = setTimeout(() => {
-      this.sync().catch((e) => console.error('[Sync] Save sync failed:', e))
+      this.sync().catch((e) => log.error('[Sync] Save sync failed:', e))
     }, 3000)
   }
 
   // 手动触发同步
   async sync(): Promise<SyncResponse | null> {
     if (this.status === 'syncing') {
-      console.log('[Sync] Already syncing, skipping')
+      log.debug('[Sync] Already syncing, skipping')
       return null
     }
 
     if (!getAccessToken()) {
-      console.log('[Sync] Not logged in, skipping sync')
+      log.debug('[Sync] Not logged in, skipping sync')
       return null
     }
 
@@ -138,14 +139,14 @@ class SyncManager {
         this.setStatus('success')
       }
 
-      console.log(
+      log.info(
         `[Sync] Synced: ${syncData.synced.length}, Conflicts: ${syncData.conflicts.length}, Server changes: ${syncData.serverChanges.length}`
       )
 
       return syncData
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Unknown error'
-      console.error('[Sync] Sync failed:', message)
+      log.error('[Sync] Sync failed:', message)
       this.setStatus('error', message)
       // 网络错误时，10 秒后重试
       if (message.includes('Network error') || message.includes('ECONNREFUSED')) {
@@ -171,8 +172,8 @@ class SyncManager {
 
   // 网络恢复时立即同步
   onNetworkRestore(): void {
-    console.log('[Sync] Network restored, triggering sync')
-    this.sync().catch((e) => console.error('[Sync] Network restore sync failed:', e))
+    log.info('[Sync] Network restored, triggering sync')
+    this.sync().catch((e) => log.error('[Sync] Network restore sync failed:', e))
   }
 
   // 网络错误时，10 秒后重试
@@ -180,8 +181,8 @@ class SyncManager {
     if (this.retryTimer) return
     this.retryTimer = setTimeout(() => {
       this.retryTimer = null
-      console.log('[Sync] Retrying after network error...')
-      this.sync().catch((e) => console.error('[Sync] Retry sync failed:', e))
+      log.info('[Sync] Retrying after network error...')
+      this.sync().catch((e) => log.error('[Sync] Retry sync failed:', e))
     }, 10_000)
   }
 
@@ -287,7 +288,7 @@ class SyncManager {
       })
       serverImages = new Set((resp as { images: ServerImage[] }).images.map((img) => img.filename))
     } catch (e) {
-      console.error('[Sync] Failed to fetch server image list:', e)
+      log.error('[Sync] Failed to fetch server image list:', e)
       return
     }
 
@@ -312,9 +313,9 @@ class SyncManager {
         formData.append('filename', filename)
 
         await notesUpload('/api/v1/images', formData)
-        console.log(`[Sync] Uploaded image: ${filename}`)
+        log.info(`[Sync] Uploaded image: ${filename}`)
       } catch (e) {
-        console.error(`[Sync] Failed to upload image ${filename}:`, e)
+        log.error(`[Sync] Failed to upload image ${filename}:`, e)
       }
     }
   }
@@ -355,9 +356,9 @@ class SyncManager {
       try {
         const buffer = await notesDownload(`/api/v1/images/${filename}`)
         fs.writeFileSync(path.join(imagesDir, filename), buffer)
-        console.log(`[Sync] Downloaded image: ${filename}`)
+        log.info(`[Sync] Downloaded image: ${filename}`)
       } catch (e) {
-        console.error(`[Sync] Failed to download image ${filename}:`, e)
+        log.error(`[Sync] Failed to download image ${filename}:`, e)
       }
     }
   }

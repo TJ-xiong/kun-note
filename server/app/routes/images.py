@@ -68,6 +68,7 @@ def upload_image():
     db.session.add(image)
     db.session.commit()
 
+    current_app.logger.info('[Images] 用户 %s 上传图片: %s (%d bytes)', user_id, filename, file_size)
     return jsonify({'filename': filename}), 201
 
 
@@ -83,6 +84,8 @@ def download_image(filename: str):
     file_path = os.path.join(images_dir, filename)
 
     if not os.path.exists(file_path):
+        current_app.logger.warning('[Images] 用户 %s 请求的图片不存在: %s', user_id, filename)
         return jsonify({'code': 404, 'message': 'Image not found'}), 404
 
+    current_app.logger.debug('[Images] 用户 %s 下载图片: %s', user_id, filename)
     return send_file(file_path)

@@ -3,6 +3,7 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig
 } from 'axios'
+import log from './logger'
 import { HttpRequestConfig } from '../../types/http'
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './auth-store'
 
@@ -44,12 +45,12 @@ async function handleTokenRefresh(
       )
       const { access_token, refresh_token } = resp.data
       setTokens(access_token, refresh_token)
-      console.log('[HTTP] Token refreshed successfully')
+      log.info('[HTTP] Token refreshed successfully')
       onTokenRefreshed(access_token)
       originalRequest.headers.Authorization = `Bearer ${access_token}`
       return axiosInstance.request(originalRequest)
     } catch (refreshError) {
-      console.error('[HTTP] Token refresh failed, clearing local token')
+      log.error('[HTTP] Token refresh failed, clearing local token')
       clearTokens()
       refreshSubscribers = []
       throw refreshError
@@ -81,7 +82,7 @@ userService.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     config.headers.Authorization = `Bearer ${token}`
   }
   const fullUrl = config.url?.startsWith('http') ? config.url : `${config.baseURL}${config.url}`
-  console.log(`[HTTP] ${config.method?.toUpperCase()} ${fullUrl}`)
+  log.debug(`[HTTP] ${config.method?.toUpperCase()} ${fullUrl}`)
   return config
 })
 
@@ -90,7 +91,7 @@ userService.interceptors.response.use(
     const fullUrl = response.config.url?.startsWith('http')
       ? response.config.url
       : `${response.config.baseURL}${response.config.url}`
-    console.log(`[HTTP] ${response.status} ${response.config.method?.toUpperCase()} ${fullUrl}`)
+    log.debug(`[HTTP] ${response.status} ${response.config.method?.toUpperCase()} ${fullUrl}`)
     return response
   },
   async (error) => {
@@ -99,12 +100,12 @@ userService.interceptors.response.use(
     const errorUrl = originalRequest?.url?.startsWith('http')
       ? originalRequest.url
       : `${originalRequest?.baseURL}${originalRequest?.url}`
-    console.warn(
+    log.warn(
       `[HTTP] Request failed: ${status ?? 'no response'} ${originalRequest?.method?.toUpperCase()} ${errorUrl}`
     )
     if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
-      console.log('[HTTP] Trying to refresh token...')
+      log.info('[HTTP] Trying to refresh token...')
       return handleTokenRefresh(originalRequest, userService)
     }
     const message =
@@ -113,7 +114,7 @@ userService.interceptors.response.use(
       error?.response?.data?.detail ??
       error.message ??
       'Network error'
-    console.error(`[HTTP] Error: ${message}`)
+    log.error(`[HTTP] Error: ${message}`)
     return Promise.reject(new Error(message))
   }
 )
@@ -132,7 +133,7 @@ notesService.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     config.headers.Authorization = `Bearer ${token}`
   }
   const fullUrl = config.url?.startsWith('http') ? config.url : `${config.baseURL}${config.url}`
-  console.log(`[Notes HTTP] ${config.method?.toUpperCase()} ${fullUrl}`)
+  log.debug(`[Notes HTTP] ${config.method?.toUpperCase()} ${fullUrl}`)
   return config
 })
 
@@ -141,7 +142,7 @@ notesService.interceptors.response.use(
     const fullUrl = response.config.url?.startsWith('http')
       ? response.config.url
       : `${response.config.baseURL}${response.config.url}`
-    console.log(
+    log.debug(
       `[Notes HTTP] ${response.status} ${response.config.method?.toUpperCase()} ${fullUrl}`
     )
     return response
@@ -152,12 +153,12 @@ notesService.interceptors.response.use(
     const errorUrl = originalRequest?.url?.startsWith('http')
       ? originalRequest.url
       : `${originalRequest?.baseURL}${originalRequest?.url}`
-    console.warn(
+    log.warn(
       `[Notes HTTP] Request failed: ${status ?? 'no response'} ${originalRequest?.method?.toUpperCase()} ${errorUrl}`
     )
     if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
-      console.log('[Notes HTTP] Trying to refresh token...')
+      log.info('[Notes HTTP] Trying to refresh token...')
       return handleTokenRefresh(originalRequest, notesService)
     }
     const message =
@@ -166,7 +167,7 @@ notesService.interceptors.response.use(
       error?.response?.data?.detail ??
       error.message ??
       'Network error'
-    console.error(`[Notes HTTP] Error: ${message}`)
+    log.error(`[Notes HTTP] Error: ${message}`)
     return Promise.reject(new Error(message))
   }
 )
