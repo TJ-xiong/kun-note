@@ -325,10 +325,12 @@ function createWindow(page: string = 'main'): BrowserWindow {
     }
   })
 
-  // 鼠标检测展开/收起
+  // 鼠标检测展开/收起（200ms 间隔，减少 CPU 占用）
   setInterval(() => {
-    updateWindowPosition()
-  }, 100)
+    if (!isAnimating) {
+      updateWindowPosition()
+    }
+  }, 200)
 
   window.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)

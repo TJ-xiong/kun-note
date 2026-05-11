@@ -23,7 +23,7 @@ export function isCursorNearTopOfWindow(cursor: Point, bounds: Rectangle, edgeSi
 export function animateWindowY(
   win: BrowserWindow,
   targetY: number,
-  duration = 300,
+  duration = 200,
   updateAnimating: (state: boolean) => void,
   callback: () => void
 ): void {
@@ -31,26 +31,26 @@ export function animateWindowY(
   const bounds = win.getBounds()
   const startY = bounds.y
   const distance = targetY - startY
-  const steps = 30 // 动画帧数
+  const steps = 20 // 减少帧数，20 帧足够流畅
   const stepTime = duration / steps
   let currentStep = 0
 
-  const interval = setInterval(() => {
+  const tick = (): void => {
     currentStep++
     const progress = currentStep / steps
     const newY = Math.round(startY + distance * progress)
 
-    win.setBounds({
-      x: bounds.x,
-      y: newY,
-      width: bounds.width,
-      height: bounds.height
-    })
+    // 只设置位置，不设置宽高，开销更小
+    win.setPosition(bounds.x, newY)
 
     if (currentStep >= steps) {
-      clearInterval(interval)
       updateAnimating(false)
       callback && callback()
+    } else {
+      setTimeout(tick, stepTime)
     }
-  }, stepTime)
+  }
+
+  // 首帧立即执行
+  tick()
 }
