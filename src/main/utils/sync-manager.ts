@@ -274,23 +274,27 @@ class SyncManager {
     }
   }
 
-  // 上传本地新图片到服务端
-  private async syncImages(): Promise<void> {
-    const imagesDir = path.join(app.getPath('userData'), 'images')
-    if (!fs.existsSync(imagesDir)) return
-
-    // 获取服务端已有图片列表
-    let serverImages: Set<string> = new Set()
+  // 从服务端获取所有图片列表
+  private async getServerImageList(): Promise<Set<string>> {
     try {
       const resp = await notesRequest<{ images: ServerImage[] }>({
         url: '/api/v1/images',
         method: 'GET'
       })
-      serverImages = new Set((resp as { images: ServerImage[] }).images.map((img) => img.filename))
+      return new Set((resp as { images: ServerImage[] }).images.map((img) => img.filename))
     } catch (e) {
       log.error('[Sync] Failed to fetch server image list:', e)
-      return
+      return new Set()
     }
+  }
+
+  // 上传本地新图片到服务端
+  private async syncImages(): Promise<void> {
+    const imagesDir = path.join(app.getPath('userData'), 'images')
+    if (!fs.existsSync(imagesDir)) return
+
+    const serverImages = await this.getServerImageList()
+    if (serverImages.size === 0) return
 
     // 扫描本地图片目录
     const localFiles = fs.readdirSync(imagesDir).filter((f) => {
@@ -332,13 +336,14 @@ class SyncManager {
     return refs
   }
 
-  // 下载服务端图片到本地
+  // 下载缺失的图片（检查所有本地笔记的图片引用，而非仅 serverChanges）
   private async downloadMissingImages(serverChanges: Note[]): Promise<void> {
     const imagesDir = path.join(app.getPath('userData'), 'images')
     fs.mkdirSync(imagesDir, { recursive: true })
 
-    // 收集所有服务端笔记中的图片引用
     const allRefs = new Set<string>()
+
+    // 1. 从 serverChanges 中提取图片引用
     for (const note of serverChanges) {
       if (note.content) {
         for (const ref of this.extractImageRefs(note.content)) {
@@ -347,12 +352,36 @@ class SyncManager {
       }
     }
 
+    // 2. 从所有本地未删除笔记中提取图片引用（确保本地图片完整性）
+    try {
+      const allNotes = this.db
+        .prepare('SELECT content FROM notes WHERE deleted = 0 AND content IS NOT NULL')
+        .all() as { content: string }[]
+      for (const note of allNotes) {
+        for (const ref of this.extractImageRefs(note.content)) {
+          allRefs.add(ref)
+        }
+      }
+    } catch (e) {
+      log.error('[Sync] Failed to read local notes for image refs:', e)
+    }
+
     // 筛选本地不存在的图片
     const missing = Array.from(allRefs).filter((filename) => {
       return !fs.existsSync(path.join(imagesDir, filename))
     })
 
-    for (const filename of missing) {
+    if (missing.length === 0) return
+
+    // 检查服务端是否有这些图片，只下载服务端存在的
+    const serverImages = await this.getServerImageList()
+    const downloadable = missing.filter((filename) => serverImages.has(filename))
+
+    if (downloadable.length > 0) {
+      log.info(`[Sync] Found ${missing.length} missing images, downloading ${downloadable.length} from server`)
+    }
+
+    for (const filename of downloadable) {
       try {
         const buffer = await notesDownload(`/api/v1/images/${filename}`)
         fs.writeFileSync(path.join(imagesDir, filename), buffer)
