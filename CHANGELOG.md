@@ -1,3 +1,15 @@
+# [1.7.0](https://github.com/TJ-xiong/kun-note/compare/v1.6.0...v1.7.0) (2026-05-11)
+
+
+### Bug Fixes
+
+* 修复服务端无变更时本地缺失图片不会同步的问题 ([c9365eb](https://github.com/TJ-xiong/kun-note/commit/c9365eb04d5fc274270a2320468a04926eda8d93))
+
+
+### Features
+
+* 支持笔记中复制图片到剪贴板 ([bd735a8](https://github.com/TJ-xiong/kun-note/commit/bd735a8083310afbd9a4205ad69a7cd9fcf7cff5))
+
 # [1.6.0](https://github.com/TJ-xiong/kun-note/compare/v1.5.0...v1.6.0) (2026-05-10)
 
 
