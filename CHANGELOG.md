@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/TJ-xiong/kun-note/compare/v1.7.0...v1.7.1) (2026-05-11)
+
+
+### Performance Improvements
+
+* 优化窗口收起/展开动画性能 ([804c18a](https://github.com/TJ-xiong/kun-note/commit/804c18a0e4ed0acada52dbec7a15fb38d82a8ed9))
+
 # [1.7.0](https://github.com/TJ-xiong/kun-note/compare/v1.6.0...v1.7.0) (2026-05-11)
 
 
