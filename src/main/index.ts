@@ -252,6 +252,21 @@ ipcMain.handle('get-image-data-url', (_event, rel: string): string => {
   return `data:${mime};base64,${buf.toString('base64')}`
 })
 
+// 渲染进程日志转发到主进程日志文件
+ipcMain.handle('renderer-log', (_event, level: string, ...args: unknown[]) => {
+  const message = args.map((a) => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ')
+  switch (level) {
+    case 'error':
+      log.error('[Renderer]', message)
+      break
+    case 'warn':
+      log.warn('[Renderer]', message)
+      break
+    default:
+      log.info('[Renderer]', message)
+  }
+})
+
 function createWindow(page: string = 'main'): BrowserWindow {
   // 根据页面类型设置窗口尺寸
   const windowSizes: Record<string, { width: number; height: number }> = {

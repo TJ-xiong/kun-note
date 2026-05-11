@@ -26,6 +26,8 @@ const api = {
   getImagesDir: (): Promise<string> => ipcRenderer.invoke('get-images-dir'),
   // 将相对图片路径转换为 data URL（用于 dev 环境避免 file:/// CSP/权限限制）
   getImageDataUrl: (rel: string): Promise<string> => ipcRenderer.invoke('get-image-data-url', rel),
+  // 渲染进程日志转发到主进程日志文件
+  log: (level: string, ...args: unknown[]): Promise<void> => ipcRenderer.invoke('renderer-log', level, ...args),
   // 设置相关
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings: Partial<AppSettings>): Promise<AppSettings> =>

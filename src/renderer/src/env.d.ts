@@ -18,6 +18,7 @@ export interface Api {
   saveImage: (dataUrl: string) => Promise<string>
   getImagesDir: () => Promise<string>
   getImageDataUrl: (rel: string) => Promise<string>
+  log: (level: string, ...args: unknown[]) => Promise<void>
   getSettings: () => Promise<AppSettings>
   saveSettings: (settings: Partial<AppSettings>) => Promise<AppSettings>
   authLogin: (username: string, password: string) => Promise<any>
