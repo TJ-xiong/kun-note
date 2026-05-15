@@ -494,6 +494,33 @@
   color: #333;
 }
 
+/* 同步状态 */
+.settings-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.settings-sync-badge-syncing {
+  color: #1890ff;
+  background-color: #e6f7ff;
+}
+
+.settings-sync-badge-success {
+  color: #52c41a;
+  background-color: #f6ffed;
+}
+
+.settings-sync-badge-error {
+  color: #ff4d4f;
+  background-color: #fff2f0;
+}
+
 /* 更新相关 */
 .settings-download-btn {
   padding: 8px 20px;

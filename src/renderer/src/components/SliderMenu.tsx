@@ -288,8 +288,21 @@ const App: React.FC<SliderMenuProps> = ({
             找到 {searchResults.length} 个结果
           </div>
         ) : currParentId !== 'root' ? (
-          <div>
-            <LeftOutlined style={{ cursor: 'pointer' }} onClick={handleClickBack} />
+          <div
+            onClick={handleClickBack}
+            style={{
+              cursor: 'pointer',
+              padding: '4px 6px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              marginBottom: '4px'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.04)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            <LeftOutlined />
             <span>{getFolderName()}</span>
           </div>
         ) : null}

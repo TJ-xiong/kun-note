@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
+import { LoadingOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons'
 import type { UserInfo } from '../../../types/auth'
-import type { UpdateStatusEvent, UpdateProgress, UpdateInfo } from '../../../types/sync'
+import type { UpdateStatusEvent, UpdateProgress, UpdateInfo, SyncStatusEvent } from '../../../types/sync'
 import './Settings.css'
 
 interface AppSettings {
@@ -19,6 +20,9 @@ const Settings: React.FC = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // 同步状态
+  const [syncStatus, setSyncStatus] = useState<string>('idle')
+  const [syncError, setSyncError] = useState('')
   // 版本与更新
   const [version, setVersion] = useState('')
   const [updateStatus, setUpdateStatus] = useState<string>('idle')
@@ -36,6 +40,12 @@ const Settings: React.FC = () => {
       .catch(() => {})
     // 获取版本号
     window.api.getAppVersion().then(setVersion)
+    // 监听同步状态
+    const unsubSyncStatus = window.api.onSyncStatus((event: SyncStatusEvent) => {
+      setSyncStatus(event.status)
+      if (event.error) setSyncError(event.error)
+      if (event.status === 'idle') setSyncError('')
+    })
     // 监听更新状态
     const unsubStatus = window.api.onUpdateStatus((event: UpdateStatusEvent) => {
       setUpdateStatus(event.status)
@@ -47,6 +57,7 @@ const Settings: React.FC = () => {
       setDownloadProgress(progress)
     })
     return () => {
+      unsubSyncStatus()
       unsubStatus()
       unsubProgress()
     }
@@ -90,6 +101,17 @@ const Settings: React.FC = () => {
       await window.api.authLogout()
     } finally {
       setUser(null)
+    }
+  }
+
+  const handleSync = async (): Promise<void> => {
+    if (syncStatus === 'syncing') return
+    setSyncError('')
+    try {
+      await window.api.syncStart()
+    } catch (e) {
+      setSyncStatus('error')
+      setSyncError(e instanceof Error ? e.message : '同步失败')
     }
   }
 
@@ -231,18 +253,41 @@ const Settings: React.FC = () => {
           <div className="settings-card">
             <div className="settings-item">
               <div className="settings-item-info">
-                <div className="settings-item-label">同步状态</div>
+                <div className="settings-item-label">
+                  同步状态
+                  {syncStatus === 'syncing' && (
+                    <span className="settings-sync-badge settings-sync-badge-syncing">
+                      <LoadingOutlined spin /> 同步中
+                    </span>
+                  )}
+                  {syncStatus === 'success' && (
+                    <span className="settings-sync-badge settings-sync-badge-success">
+                      <CheckCircleOutlined /> 同步成功
+                    </span>
+                  )}
+                  {syncStatus === 'error' && (
+                    <span className="settings-sync-badge settings-sync-badge-error">
+                      <ExclamationCircleOutlined /> 同步失败
+                    </span>
+                  )}
+                </div>
                 <div className="settings-item-desc">
-                  {user ? '已登录，笔记可同步至云端' : '登录后可开启云端同步'}
+                  {!user
+                    ? '登录后可开启云端同步'
+                    : syncStatus === 'syncing'
+                      ? '正在同步笔记数据...'
+                      : syncStatus === 'error' && syncError
+                        ? syncError
+                        : '已登录，笔记可同步至云端'}
                 </div>
               </div>
               <button
                 className="settings-login-btn"
-                onClick={() => window.api.syncStart()}
-                disabled={!user}
-                style={{ opacity: user ? 1 : 0.5 }}
+                onClick={handleSync}
+                disabled={!user || syncStatus === 'syncing'}
+                style={{ opacity: user && syncStatus !== 'syncing' ? 1 : 0.5 }}
               >
-                立即同步
+                {syncStatus === 'syncing' ? '同步中...' : '立即同步'}
               </button>
             </div>
 

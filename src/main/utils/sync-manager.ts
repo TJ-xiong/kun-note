@@ -120,8 +120,8 @@ class SyncManager {
 
       const syncData = response as SyncResponse
 
-      // 应用服务端变更到本地
-      this.applyServerChanges(syncData.serverChanges)
+      // 应用服务端变更到本地（使用服务端时间作为 syncedAt，避免本地时钟偏差）
+      this.applyServerChanges(syncData.serverChanges, syncData.syncTime)
 
       // 下载服务端笔记中引用的缺失图片
       await this.downloadMissingImages(syncData.serverChanges)
@@ -162,7 +162,7 @@ class SyncManager {
     if (!conflict) return
 
     const noteToApply = resolution === 'use-mine' ? conflict.clientVersion : conflict.serverVersion
-    this.applyNoteToLocal(noteToApply)
+    this.applyNoteToLocal(noteToApply, this.state.lastSyncTime)
 
     this.pendingConflicts = this.pendingConflicts.filter((c) => c.id !== noteId)
     if (this.pendingConflicts.length === 0) {
@@ -202,14 +202,14 @@ class SyncManager {
   }
 
   // 应用服务端变更到本地
-  private applyServerChanges(serverChanges: Note[]): void {
+  private applyServerChanges(serverChanges: Note[], syncTime: number): void {
     for (const change of serverChanges) {
-      this.applyNoteToLocal(change)
+      this.applyNoteToLocal(change, syncTime)
     }
   }
 
-  // 将单条笔记应用到本地数据库
-  private applyNoteToLocal(note: Note): void {
+  // 将单条笔记应用到本地数据库（syncTime 使用服务端时间，避免本地时钟偏差）
+  private applyNoteToLocal(note: Note, syncTime: number): void {
     const existing = this.db.prepare('SELECT id FROM notes WHERE id=?').get(note.id)
 
     if (existing) {
@@ -226,7 +226,7 @@ class SyncManager {
           note.version,
           note.deleted ? 1 : 0,
           note.updatedAt,
-          Date.now(),
+          syncTime,
           note.id
         )
     } else {
@@ -246,7 +246,7 @@ class SyncManager {
           note.deleted ? 1 : 0,
           note.updatedAt,
           note.updatedAt,
-          Date.now()
+          syncTime
         )
     }
   }
