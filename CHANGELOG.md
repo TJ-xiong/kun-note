@@ -1,3 +1,10 @@
+## [1.7.2](https://github.com/TJ-xiong/kun-note/compare/v1.7.1...v1.7.2) (2026-05-15)
+
+
+### Bug Fixes
+
+* 修复同步状态反馈缺失、返回按钮点击区域过小、本地时钟偏差导致同步错乱 ([a7eb37c](https://github.com/TJ-xiong/kun-note/commit/a7eb37cf2ca1c6d74fed1bf91d3246830c4a304a))
+
 ## [1.7.1](https://github.com/TJ-xiong/kun-note/compare/v1.7.0...v1.7.1) (2026-05-11)
 
 
