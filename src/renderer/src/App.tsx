@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import TitleBar from './components/TitleBar'
 import { NewOrUpdateNote, Note, NoteType } from '../../types/note'
-import MarkdownEditor from './components/MarkdownEditor'
+import RichTextEditor from './components/RichTextEditor'
 import SliderMenu from './components/SliderMenu'
 import Slider from './components/Slider'
 import VersionHistory from './components/VersionHistory'
@@ -143,7 +143,7 @@ function App(): React.JSX.Element {
           />
           <div className="main-content">
             {currentNote ? (
-              <MarkdownEditor value={currentNote.content || ''} onChange={handleContentChange} />
+              <RichTextEditor noteId={currentNote.id || undefined} value={currentNote.content || ''} onChange={handleContentChange} />
             ) : (
               <p>请选择一个笔记</p>
             )}

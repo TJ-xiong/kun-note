@@ -16,7 +16,7 @@ kun-notes 是一款基于 Electron 的桌面端笔记应用，支持 Markdown �
 - **UI 组件**: Ant Design 5.x
 - **状态管理**: Redux Toolkit + React-Redux
 - **路由**: react-router-dom 6.x (HashRouter)
-- **Markdown 编辑器**: @uiw/react-md-editor 4.x
+- **富文本编辑器**: TipTap 3.x（基于 ProseMirror，WYSIWYG，存储格式为 Markdown）
 - **HTTP 客户端**: axios
 
 ### 数据存储
@@ -61,7 +61,7 @@ kun-notes/
 │   │       ├── main.tsx         # React 入口
 │   │       ├── router.tsx       # 路由配置
 │   │       ├── components/      # 组件
-│   │       │   ├── MarkdownEditor.tsx  # Markdown 编辑器
+│   │       │   ├── RichTextEditor.tsx  # TipTap 富文本编辑器（WYSIWYG，Markdown 存储）
 │   │       │   ├── Slider.tsx          # 侧边栏（简版）
 │   │       │   ├── SliderMenu.tsx      # 侧边栏（菜单版，含搜索）
 │   │       │   ├── TitleBar.tsx        # 自定义标题栏
@@ -114,7 +114,7 @@ kun-notes/
 
 ### 笔记管理
 - 创建/编辑/删除笔记和文件夹
-- 笔记支持 Markdown 格式，使用 @uiw/react-md-editor
+- 笔记支持富文本编辑（WYSIWYG），底层存储为 Markdown 格式，使用 TipTap
 - 文件夹层级结构（通过 parentId 实现）
 - 笔记置顶功能
 - 关键字搜索（标题和内容模糊匹配）

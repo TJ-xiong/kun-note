@@ -1,0 +1,593 @@
+/* ======== 容器 ======== */
+.rich-text-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.rich-text-editor-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ======== 固定工具栏 ======== */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--color-background);
+  flex-wrap: wrap;
+  min-height: 30px;
+  user-select: none;
+  position: relative;
+  z-index: 50;
+}
+
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #555;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s, color 0.12s;
+}
+
+.toolbar-btn:hover {
+  background: rgba(0, 0, 0, 0.07);
+  color: #222;
+}
+
+.toolbar-btn.is-active {
+  background: rgba(26, 115, 232, 0.15);
+  color: #1a73e8;
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+/* ======== 标题下拉 ======== */
+.toolbar-dropdown {
+  position: relative;
+}
+
+.toolbar-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #555;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+
+.toolbar-dropdown-trigger:hover {
+  background: rgba(0, 0, 0, 0.07);
+}
+
+.toolbar-dropdown-arrow {
+  display: inline-flex;
+  opacity: 0.5;
+}
+
+.toolbar-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  z-index: 999;
+  min-width: 100px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 3px;
+}
+
+.toolbar-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #333;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toolbar-dropdown-item:hover {
+  background: #f0f0f0;
+}
+
+.toolbar-dropdown-item.is-active {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+
+/* ======== 颜色选择器 ======== */
+.color-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  padding: 4px;
+  min-width: 110px;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+  border-color: #999;
+}
+
+.color-reset {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+  padding: 2px 0;
+  border: none;
+  border-radius: 3px;
+  background: #f0f0f0;
+  color: #555;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.color-reset:hover {
+  background: #e0e0e0;
+}
+
+/* ======== 表格网格选择器 ======== */
+.table-grid-picker {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  z-index: 999;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 6px;
+}
+
+.table-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.table-grid-row {
+  display: flex;
+  gap: 2px;
+}
+
+.table-grid-cell {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #d0d7de;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.05s;
+}
+
+.table-grid-cell.is-highlighted {
+  background: #d0e4ff;
+  border-color: #90b8e8;
+}
+
+.table-grid-label {
+  text-align: center;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #888;
+}
+
+/* ======== 浮动格式菜单 (BubbleMenu) ======== */
+.bubble-menu {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 3px 4px;
+  background: #2a2a2a;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  max-width: 100vw;
+  overflow: visible;
+}
+
+.bubble-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #bbb;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s, color 0.12s;
+}
+
+.bubble-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.bubble-btn.is-active {
+  background: rgba(26, 115, 232, 0.45);
+  color: #fff;
+}
+
+.bubble-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 2px;
+}
+
+.bubble-link-wrapper {
+  position: relative;
+}
+
+.bubble-link-popup {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: #2a2a2a;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  z-index: 200;
+  white-space: nowrap;
+}
+
+.bubble-link-input {
+  width: 200px;
+  padding: 3px 6px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  background: #333;
+  color: #eee;
+  font-size: 12px;
+  outline: none;
+}
+
+.bubble-link-input::placeholder {
+  color: #888;
+}
+
+.bubble-link-confirm {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 3px;
+  background: #1a73e8;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.bubble-link-confirm:hover {
+  background: #1557b0;
+}
+
+/* ======== TipTap 编辑器主体 ======== */
+.rich-text-editor .tiptap {
+  min-height: 100%;
+  padding: 10px 16px 40px;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1.7;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Placeholder */
+.rich-text-editor .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* ======== 排版样式 ======== */
+.rich-text-editor .tiptap h1 {
+  font-size: 1.6em;
+  font-weight: 600;
+  margin: 0.6em 0 0.3em;
+  line-height: 1.3;
+}
+
+.rich-text-editor .tiptap h2 {
+  font-size: 1.4em;
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+  line-height: 1.3;
+}
+
+.rich-text-editor .tiptap h3 {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin: 0.4em 0 0.2em;
+  line-height: 1.3;
+}
+
+.rich-text-editor .tiptap h4 {
+  font-size: 1.15em;
+  font-weight: 600;
+  margin: 0.4em 0 0.2em;
+}
+
+.rich-text-editor .tiptap h5 {
+  font-size: 1.05em;
+  font-weight: 600;
+  margin: 0.3em 0 0.15em;
+}
+
+.rich-text-editor .tiptap h6 {
+  font-size: 0.95em;
+  font-weight: 600;
+  margin: 0.3em 0 0.15em;
+}
+
+.rich-text-editor .tiptap p {
+  margin: 0 0 0.3em;
+}
+
+.rich-text-editor .tiptap strong {
+  font-weight: 600;
+}
+
+.rich-text-editor .tiptap em {
+  font-style: italic;
+}
+
+.rich-text-editor .tiptap s {
+  text-decoration: line-through;
+}
+
+.rich-text-editor .tiptap u {
+  text-decoration: underline;
+}
+
+.rich-text-editor .tiptap a {
+  color: #1a73e8;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.rich-text-editor .tiptap mark {
+  background-color: #fff3b0;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.rich-text-editor .tiptap blockquote {
+  border-left: 3px solid #d0d7de;
+  margin: 0.4em 0;
+  padding: 0.15em 0 0.15em 0.8em;
+  color: #656d76;
+}
+
+/* 行内代码 */
+.rich-text-editor .tiptap code {
+  background: #2d2d2d;
+  color: #e0e0e0;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+}
+
+/* 代码块 */
+.rich-text-editor .tiptap pre {
+  background: #2d2d2d;
+  color: #e0e0e0;
+  padding: 10px 14px;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 0.4em 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.rich-text-editor .tiptap pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+/* 列表 */
+.rich-text-editor .tiptap ul,
+.rich-text-editor .tiptap ol {
+  padding-left: 1.5em;
+  margin: 0.2em 0;
+}
+
+.rich-text-editor .tiptap li {
+  margin-bottom: 0.1em;
+}
+
+.rich-text-editor .tiptap li p {
+  margin: 0;
+}
+
+/* 任务列表 */
+.rich-text-editor .tiptap ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.rich-text-editor .tiptap ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4em;
+}
+
+.rich-text-editor .tiptap ul[data-type='taskList'] li > label {
+  flex-shrink: 0;
+  margin-top: 0.15em;
+}
+
+.rich-text-editor .tiptap ul[data-type='taskList'] li > label input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: #1a73e8;
+}
+
+.rich-text-editor .tiptap ul[data-type='taskList'] li[data-checked='true'] > div > p {
+  text-decoration: line-through;
+  color: #adb5bd;
+}
+
+/* 分割线 */
+.rich-text-editor .tiptap hr {
+  border: none;
+  border-top: 1px solid #d0d7de;
+  margin: 0.8em 0;
+}
+
+/* 表格 */
+.rich-text-editor .tiptap table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.4em 0;
+  table-layout: auto;
+}
+
+.rich-text-editor .tiptap th,
+.rich-text-editor .tiptap td {
+  border: 1px solid #d0d7de;
+  padding: 5px 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.rich-text-editor .tiptap th {
+  background: #f6f8fa;
+  font-weight: 600;
+}
+
+/* 图片 */
+.rich-text-editor .image-node-view {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0.2em 0;
+  cursor: default;
+}
+
+.rich-text-editor .image-node-view img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.rich-text-editor .image-node-view.is-selected img {
+  outline: 2px solid #1a73e8;
+  outline-offset: 2px;
+}
+
+/* ======== 滚动条 ======== */
+.rich-text-editor-content::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.rich-text-editor-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rich-text-editor-content::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+.rich-text-editor-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.25);
+}
+
+.rich-text-editor-content {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+/* ======== 代码高亮 (lowlight) ======== */
+.rich-text-editor .tiptap pre .hljs-comment,
+.rich-text-editor .tiptap pre .hljs-quote {
+  color: #6a9955;
+}
+
+.rich-text-editor .tiptap pre .hljs-keyword,
+.rich-text-editor .tiptap pre .hljs-selector-tag {
+  color: #569cd6;
+}
+
+.rich-text-editor .tiptap pre .hljs-string,
+.rich-text-editor .tiptap pre .hljs-attr {
+  color: #ce9178;
+}
+
+.rich-text-editor .tiptap pre .hljs-number,
+.rich-text-editor .tiptap pre .hljs-literal {
+  color: #b5cea8;
+}
+
+.rich-text-editor .tiptap pre .hljs-function,
+.rich-text-editor .tiptap pre .hljs-title {
+  color: #dcdcaa;
+}
+
+.rich-text-editor .tiptap pre .hljs-type,
+.rich-text-editor .tiptap pre .hljs-built_in {
+  color: #4ec9b0;
+}
+
+.rich-text-editor .tiptap pre .hljs-variable,
+.rich-text-editor .tiptap pre .hljs-template-variable {
+  color: #9cdcfe;
+}
