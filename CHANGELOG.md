@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/TJ-xiong/kun-note/compare/v1.7.2...v1.8.0) (2026-05-26)
+
+
+### Features
+
+* 替换 Markdown 编辑器为 TipTap 富文本编辑器 ([6d74865](https://github.com/TJ-xiong/kun-note/commit/6d748657562bcabe3e03a639d08afd96074606c6))
+
 ## [1.7.2](https://github.com/TJ-xiong/kun-note/compare/v1.7.1...v1.7.2) (2026-05-15)
 
 
