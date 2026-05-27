@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/TJ-xiong/kun-note/compare/v1.8.0...v1.8.1) (2026-05-27)
+
+
+### Bug Fixes
+
+* 修复切换笔记后撤销按钮显示其他笔记内容的问题 ([823f351](https://github.com/TJ-xiong/kun-note/commit/823f351cef2e92ffd15879affe6e5ece5fe37d9c))
+
 # [1.8.0](https://github.com/TJ-xiong/kun-note/compare/v1.7.2...v1.8.0) (2026-05-26)
 
 
