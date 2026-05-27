@@ -32,7 +32,6 @@ import './RichTextEditor.css'
 const lowlight = createLowlight(common)
 
 interface RichTextEditorProps {
-  noteId?: string
   value?: string
   onChange?: (value: string) => void
 }
@@ -751,7 +750,7 @@ const CustomImage = Image.extend({
 
 // ---- 主组件 ----
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({ noteId, value = '', onChange }) => {
+const RichTextEditor: React.FC<RichTextEditorProps> = ({ value = '', onChange }) => {
   const lastExternalValue = useRef<string>(value)
   const isInternalUpdate = useRef(false)
 
@@ -897,7 +896,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ noteId, value = '', onC
   }, [editor])
 
   return (
-    <div className="rich-text-editor" key={noteId}>
+    <div className="rich-text-editor">
       {editor && <FixedToolbar editor={editor} />}
       {editor && <FormatBubbleMenu editor={editor} />}
       <div className="rich-text-editor-content">

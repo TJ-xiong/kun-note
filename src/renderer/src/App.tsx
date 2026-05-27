@@ -143,7 +143,7 @@ function App(): React.JSX.Element {
           />
           <div className="main-content">
             {currentNote ? (
-              <RichTextEditor noteId={currentNote.id || undefined} value={currentNote.content || ''} onChange={handleContentChange} />
+              <RichTextEditor key={currentNote.id} value={currentNote.content || ''} onChange={handleContentChange} />
             ) : (
               <p>请选择一个笔记</p>
             )}
